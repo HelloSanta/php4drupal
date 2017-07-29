@@ -4,7 +4,6 @@ MAINTAINER victor.yang@hellosanta.com.tw
 
 RUN a2enmod rewrite
 
-# install the PHP extensions we need
 RUN set -ex \
 	&& buildDeps=' \
 		libjpeg62-turbo-dev \
