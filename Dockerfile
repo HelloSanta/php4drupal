@@ -40,7 +40,9 @@ RUN apt-get install -y rsync mysql-client
 
 WORKDIR /var/www/html
 
+# ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
+ADD conf/php.ini /usr/local/etc/php/
 
 # Add Scripts
 ADD scripts/start.sh /start.sh
