@@ -38,6 +38,7 @@ ADD conf/supervisord.conf /etc/supervisord.conf
 
 # Add Scripts
 ADD scripts/start.sh /start.sh
+RUN chmod 755 /start.sh 
 
 
 EXPOSE 443 80
