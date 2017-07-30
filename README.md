@@ -9,6 +9,12 @@
 如果是在開發Drupal的網站，可以直接使用這個影像檔。我在這個影像檔裡面會加入一些Drupal需要用的設定（例如：Drush、Nginx設定）。
 
 
+## 主要功能
+1. Apache／Nginx
+2. PHP
+3. Memcache
+4. SSH
+
 ## 使用方法
 ```
 docker pull hellosanta/php4drupal:latest

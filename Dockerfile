@@ -31,8 +31,13 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 WORKDIR /var/www/html
 
 # Install Drush We need
-RUN php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush \
-	  && php drush core-status \
-		&& chmod +x drush \
-		&& mv drush /usr/local/bin \
-		&& drush init -y
+#RUN php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush \
+#	  && php drush core-status \
+#		&& chmod +x drush \
+#		&& mv drush /usr/local/bin \
+#		&& drush init -y
+
+
+EXPOSE 443 80
+
+CMD ["/start.sh"]
