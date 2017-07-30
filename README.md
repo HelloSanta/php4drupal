@@ -10,13 +10,36 @@
 
 
 ## 主要功能
-1. Tag來區分版本
+1. Tag來區分版本:  
 這個影像檔會根據Tag來區分不同的環境，主要包含Nginx+Php-FPM 跟 Apache這兩類，可以看各自的需求進行版本的切換，搭配docker-compose會有很好的效果
 
-2. SSH支援
+2. SSH支援  
 由於開發的需要或某一些特殊的需求，我們會需要連進入容器進行處理，因此這個影像檔有提供SSH的支援，只需要將Public key當作參數丟進來，就可以使用Private Key連到容器內。
 
 ## 使用方法
+使用方法很多，建議使用docker-compose，可以一次把該設定的設定完畢
 ```
-docker pull hellosanta/php4drupal:latest
+version: "2"
+services:
+  web:
+    image: php4drupal:test
+    ports:
+      - "8888:80"
+      - "2338:22"   # 這個欄位可以自行決定是什麼port要對應到容器的22port
+    volumes:
+      - ./www:/var/www/html/
+    environment:
+       SSH_KEY: {這裡放你的公鑰 public key}
+    restart: always
+    links:
+      - db
+  db:
+    image: mysql:5.7.18
+    volumes:
+      - ./mysql/db:/var/lib/mysql
+    environment:
+      - MYSQL_USER=drupal
+      - MYSQL_PASSWORD=drupal
+      - MYSQL_DATABASE=drupal
+      - MYSQL_ROOT_PASSWORD=drupal
 ```
