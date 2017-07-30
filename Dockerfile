@@ -28,12 +28,16 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 		&& pecl install memcached-3.0.3 \
 		&& docker-php-ext-enable memcached
 
-# Install openssh
-RUN apt-get update && apt-get install -y openssh-server
+# Install openssh && nano && supervisor
+RUN apt-get update && apt-get install -y openssh-server nano supervisor
 
 WORKDIR /var/www/html
 
 
+ADD conf/supervisord.conf /etc/supervisord.conf
+
+# Add Scripts
+ADD scripts/start.sh /start.sh
 
 
 EXPOSE 443 80
