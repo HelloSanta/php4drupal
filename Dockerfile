@@ -34,6 +34,9 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor
 WORKDIR /var/www/html
 
 
+# Install Drush for Drupal
+RUN php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush && php drush core-status && chmod +x drush && mv drush /usr/local/bin && drush init -y
+
 ADD conf/supervisord.conf /etc/supervisord.conf
 
 # Add Scripts
