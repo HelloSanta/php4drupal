@@ -31,8 +31,8 @@ RUN set -ex \
 WORKDIR /var/www/html
 
 # drush
-RUN php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush
-RUN php drush core-status
-RUN chmod +x drush
-RUN mv drush /usr/local/bin
-RUN drush init -y
+RUN php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush \
+	  && php drush core-status \
+		&& chmod +x drush \
+		&& mv drush /usr/local/bin \ 
+		&& drush init -y
