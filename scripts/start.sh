@@ -4,7 +4,7 @@
 ## 備註 如果有設定SSH key，就會自動啟動服務，並且把key寫入，讓外部可以通過ip跟port連到container裡面
 ## settings SSH
 if [ ! -z "$SSH_KEY" ]; then
-  echo 'root:root' |  #將root帳號，密碼設定為root
+  echo 'root:root' | chpasswd #將root帳號，密碼設定為root
   #sed [-OPTION] [ADD1][,ADD2] [COMMAND] [/PATTERN][/REPLACEMENT]/[FLAG] [FILE]
   #s/樣板(PATTERN)/取代(REPLACEMENT)/
   sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config # -i :代表插入一行字

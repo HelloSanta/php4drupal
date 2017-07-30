@@ -35,6 +35,9 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor && php -
 		&& mv drush /usr/local/bin \
 		&& drush init -y
 
+# Install mysql-clients && rsync. In order to sync database with the container
+RUN apt-get install -y rsync mysql-client
+
 WORKDIR /var/www/html
 
 ADD conf/supervisord.conf /etc/supervisord.conf
