@@ -18,9 +18,10 @@
 
 ## 使用方法
 使用方法很多，建議使用docker-compose，可以一次把該設定的設定完畢
+
 ```
-version: "2"
-services:
+version: "2"  
+services:  
   web:
     image: php4drupal:test
     ports:
