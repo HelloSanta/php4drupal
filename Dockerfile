@@ -23,16 +23,16 @@ RUN set -ex \
 		libpq5 \
 	&& apt-get purge -y --auto-remove $buildDeps
 
-	# Install Memcached for php 7
-	RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-	&& pecl install memcached-3.0.3 \
-	&& docker-php-ext-enable memcached
+# Install Memcached for php 7
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+		&& pecl install memcached-3.0.3 \
+		&& docker-php-ext-enable memcached
 
 WORKDIR /var/www/html
 
-# drush
-RUN php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush
-RUN php drush core-status
-RUN chmod +x drush
-RUN mv drush /usr/local/bin
-RUN drush init -y
+# Install Drush We need
+RUN php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush \
+	  && php drush core-status \
+		&& chmod +x drush \
+		&& mv drush /usr/local/bin \
+		&& drush init -y
