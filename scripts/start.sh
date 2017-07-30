@@ -16,6 +16,7 @@ if [ ! -z "$SSH_KEY" ]; then
   mkdir -p /root/.ssh/
   # 將 etc/pam.d/sshd 裡面設定為session optional pam_loginuid.so，為了支援可以使用ssh連到container
   sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+  echo $SSH_KEY > /root/.ssh/authorized_keys
 fi
 
 
