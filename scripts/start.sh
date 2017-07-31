@@ -36,7 +36,7 @@ fi
 
 if [ ! -z "$WEB_ROOT" ];then
   sed -i "s@DocumentRoot /var/www/html@DocumentRoot ${WEB_ROOT}@g" /etc/apache2/sites-available/000-default.conf
-  sed -i "s@Directory /var/www/@Directory ${WEB_ROOT}@g" /etc/apache2/apache2.conf
+  sed -i "s@Directory /var/www/html@Directory ${WEB_ROOT}@g" /etc/apache2/apache2.conf
 fi
 
 # Start supervisord and services
