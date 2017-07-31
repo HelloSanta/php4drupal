@@ -35,7 +35,7 @@ if [ ! -z "$MAX_INPUT_VARS" ];then
 fi
 
 if [ ! -z "$WEB_ROOT" ];then
-  sed -i "s@DocumentRoot /var/www/html@mDocumentRoot ${WEB_ROOT}@g" //etc/apache2/sites-available/000-default.conf
+  sed -i "s@DocumentRoot /var/www/html@DocumentRoot ${WEB_ROOT}@g" //etc/apache2/sites-available/000-default.conf
 fi
 
 # Start supervisord and services
