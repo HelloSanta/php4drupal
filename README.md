@@ -16,6 +16,15 @@
 2. SSH支援  
 由於開發的需要或某一些特殊的需求，我們會需要連進入容器進行處理，因此這個影像檔有提供SSH的支援，只需要將Public key當作參數丟進來，就可以使用Private Key連到容器內。
 
+3. 調整Apache的環境  
+由於每個容器可能會需要調整上傳檔案大小、記憶體、Max_input_vars等重要的變數，因此這個部分將可以直接寫在environment的變數中，直接做調整。
+
+## 支援環境變數
+1. SSH_KEY
+2. UPLOAD_MAX_FILESIZE
+3. POST_MAX_SIZE
+4. MEMORY_LIMIT
+
 ## 使用方法
 使用方法很多，建議使用docker-compose，可以一次把該設定的設定完畢
 

@@ -15,9 +15,20 @@ if [ ! -z "$SSH_KEY" ]; then
   mkdir -p /root/.ssh/
   # 將 etc/pam.d/sshd 裡面設定為session optional pam_loginuid.so，為了支援可以使用ssh連到container
   sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-  echo $SSH_KEY > /root/.ssh/authorized_keys
+  echo "$SSH_KEY" > /root/.ssh/authorized_keys
 fi
 
+if [ ! -z "$UPLOAD_MAX_FILESIZE" ];then
+  sed -e "s@upload_max_filesize=@upload_max_filesize=${UPLOAD_MAX_FILESIZE}@g" /usr/local/etc/php/php.ini
+fi
+
+if [ ! -z "$POST_MAX_SIZE" ];then
+  sed -e "s@post_max_size=@post_max_size=${POST_MAX_SIZE}@g" /usr/local/etc/php/php.ini
+fi
+
+if [ ! -z "$MEMORY_LIMIT" ];then
+  sed -e "s@memory_limit=@memory_limit=${MEMORY_LIMIT}@g" /usr/local/etc/php/php.ini
+fi
 
 # Start supervisord and services
 exec /usr/bin/supervisord -n -c /etc/supervisord.conf
