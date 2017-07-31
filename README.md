@@ -24,6 +24,7 @@
 2. UPLOAD_MAX_FILESIZE
 3. POST_MAX_SIZE
 4. MEMORY_LIMIT
+5. MAX_INPUT_VARS
 
 ## 使用方法
 使用方法很多，建議使用docker-compose，可以一次把該設定的設定完畢

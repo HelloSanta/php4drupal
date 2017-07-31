@@ -19,15 +19,19 @@ if [ ! -z "$SSH_KEY" ]; then
 fi
 
 if [ ! -z "$UPLOAD_MAX_FILESIZE" ];then
-  sed -e "s@upload_max_filesize=@upload_max_filesize=${UPLOAD_MAX_FILESIZE}@g" /usr/local/etc/php/php.ini
+  sed -i "s@upload_max_filesize = 10M@upload_max_filesize = ${UPLOAD_MAX_FILESIZE}M@g" /usr/local/etc/php/php.ini
 fi
 
 if [ ! -z "$POST_MAX_SIZE" ];then
-  sed -e "s@post_max_size=@post_max_size=${POST_MAX_SIZE}@g" /usr/local/etc/php/php.ini
+  sed -i "s@post_max_size = 10M@post_max_size = ${POST_MAX_SIZE}M@g" /usr/local/etc/php/php.ini
 fi
 
 if [ ! -z "$MEMORY_LIMIT" ];then
-  sed -e "s@memory_limit=@memory_limit=${MEMORY_LIMIT}@g" /usr/local/etc/php/php.ini
+  sed -i "s@memory_limit = 128M@memory_limit = ${MEMORY_LIMIT}M@g" /usr/local/etc/php/php.ini
+fi
+
+if [ ! -z "$MAX_INPUT_VARS" ];then
+  sed -i "s@max_input_vars = 2000@max_input_vars = ${MAX_INPUT_VARS}@g" /usr/local/etc/php/php.ini
 fi
 
 # Start supervisord and services
