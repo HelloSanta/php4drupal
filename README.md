@@ -1,3 +1,5 @@
+![docker hub](https://img.shields.io/docker/pulls/hellosanta/php4drupal.svg?style=flat-plastic)
+![docker hub](https://img.shields.io/docker/stars/hellosanta/php4drupal.svg?style=flat-plastic)
 [![GitHub issues](https://img.shields.io/github/issues/cobenash/php4drupal.svg?style=plastic)](https://github.com/cobenash/php4drupal/issues)
 [![GitHub forks](https://img.shields.io/github/forks/cobenash/php4drupal.svg?style=plastic)](https://github.com/cobenash/php4drupal/network)
 [![GitHub stars](https://img.shields.io/github/stars/cobenash/php4drupal.svg?style=plastic)](https://github.com/cobenash/php4drupal/stargazers)
