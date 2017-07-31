@@ -1,4 +1,4 @@
-FROM php:7.0-apache
+FROM php:5.6-apache
 
 MAINTAINER victor.yang@hellosanta.com.tw
 
@@ -23,7 +23,7 @@ RUN set -ex \
 		libpq5 \
 	&& apt-get purge -y --auto-remove $buildDeps
 
-# Install Memcached for php 7
+# Install Memcached for php 5.6
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 		&& pecl install memcached-3.0.3 \
 		&& docker-php-ext-enable memcached
