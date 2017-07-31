@@ -34,5 +34,9 @@ if [ ! -z "$MAX_INPUT_VARS" ];then
   sed -i "s@max_input_vars = 2000@max_input_vars = ${MAX_INPUT_VARS}@g" /usr/local/etc/php/php.ini
 fi
 
+if [ ! -z "$WEB_ROOT" ];then
+  sed -i "s@DocumentRoot /var/www/html@mDocumentRoot ${WEB_ROOT}@g" //etc/apache2/sites-available/000-default.conf
+fi
+
 # Start supervisord and services
 exec /usr/bin/supervisord -n -c /etc/supervisord.conf
