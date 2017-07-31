@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor && php -
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync mysql-client
 
-WORKDIR /var/www/html
+WORKDIR ${WEB_ROOT}
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
