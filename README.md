@@ -21,6 +21,9 @@
 3. 調整Apache的環境  
 由於每個容器可能會需要調整上傳檔案大小、記憶體、Max_input_vars等重要的變數，因此這個部分將可以直接寫在environment的變數中，直接做調整。
 
+4. 調整Web根目錄  
+可以根據個人需求調整網頁的根目錄，如果沒有設定根目錄，則這裡的會預設到 /var/www/html
+
 ## 支援環境變數
 1. SSH_KEY
 2. UPLOAD_MAX_FILESIZE
@@ -35,7 +38,7 @@
 version: "2"  
 services:  
   web:
-    image: php4drupal:test
+    image: hellosanta/php4drupal:php7.0-apache
     ports:
       - "8888:80"
       - "2338:22"   # 這個欄位可以自行決定是什麼port要對應到容器的22port
@@ -43,6 +46,8 @@ services:
       - ./www:/var/www/html/
     environment:
        SSH_KEY: {這裡放你的公鑰 public key}
+       UPLOAD_MAX_FILESIZE: 10
+       POST_MAX_SIZE: 10
     restart: always
     links:
       - db
