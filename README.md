@@ -1,15 +1,19 @@
-![docker hub](https://img.shields.io/docker/pulls/hellosanta/php4drupal.svg?style=flat-plastic)
-![docker hub](https://img.shields.io/docker/stars/hellosanta/php4drupal.svg?style=flat-plastic)
-[![GitHub issues](https://img.shields.io/github/issues/cobenash/php4drupal.svg?style=plastic)](https://github.com/cobenash/php4drupal/issues)
-[![GitHub forks](https://img.shields.io/github/forks/cobenash/php4drupal.svg?style=plastic)](https://github.com/cobenash/php4drupal/network)
-[![GitHub stars](https://img.shields.io/github/stars/cobenash/php4drupal.svg?style=plastic)](https://github.com/cobenash/php4drupal/stargazers)
+# PHP4Drupal
+
+[![Docker Automated buil](https://img.shields.io/docker/automated/hellosanta/php4drupal.svg)](https://hub.docker.com/r/hellosanta/php4drupal/)
+[![Docker Build Statu](https://img.shields.io/docker/build/hellosanta/php4drupal.svg)](https://hub.docker.com/r/hellosanta/php4drupal/)
+[![Docker Stars](https://img.shields.io/docker/stars/hellosanta/php4drupal.svg)](https://hub.docker.com/r/hellosanta/php4drupal/)
+[![HelloSanta](https://img.shields.io/badge/Company-HelloSanta-red.svg)](http://www.hellosanta.com.tw/)
+[![Drupal](https://img.shields.io/badge/drupal%207.56-Passed-green.svg)](http://www.hellosanta.com.tw/)
+[![Drupal](https://img.shields.io/badge/drupal%208.35-Passed-green.svg)](http://www.hellosanta.com.tw/)
 
 ## 簡介
-由於在開發網頁的過程當中，環境實在是太重要了。為了省很多麻煩，所以統一由Docker來統一全部的開發與正式的環境。而我主要在開發的程式Drupal，所以期望建構一個好用的影像檔，可以針對不同版本（Nginx、Apache、Php）版本進行切換環境，並且搭配Docker-compose達到非常好的使用效果。若由任何適合改進的地方，可以一起改進，讓整個系統完善
+由於在開發網頁的過程當中，環境實在是太重要了。為了省很多麻煩，所以統一由Docker來統一全部的開發與正式的環境。而我主要在開發的程式Drupal，所以期望建構一個好用的映像檔，可以針對不同版本（Nginx、Apache、Php）版本進行切換環境，並且搭配Docker-compose達到非常好的使用效果。若由任何適合改進的地方，可以一起改進，讓整個系統完善
 
 ## 適用對象
 如果是在開發Drupal的網站，可以直接使用這個影像檔。我在這個影像檔裡面會加入一些Drupal需要用的設定（例如：Drush、Nginx設定）。
 
+另外，這個影像檔會需要使用者自行把網頁程式同步進去到容器內，因此並非安裝完畢之後，Drupal或其他的CMS立刻就安裝好了，這個Image比較偏向具備一些Docker知識的人使用。
 
 ## 主要功能
 1. Tag來區分版本:  
@@ -31,8 +35,8 @@
 4. MEMORY_LIMIT
 5. MAX_INPUT_VARS
 
-## 使用方法
-使用方法很多，建議使用docker-compose，可以一次把該設定的設定完畢
+## Docker-Compose使用方法
+如果你想要用的是docker-compose的方法來使用這個Image的話，可以參考下面的範例
 
 ```
 version: "2"  
@@ -48,6 +52,8 @@ services:
        SSH_KEY: {這裡放你的公鑰 public key}
        UPLOAD_MAX_FILESIZE: 10
        POST_MAX_SIZE: 10
+       MEMORY_LIMIT： 128
+       MAX_INPUT_VARS： 1000
     restart: always
     links:
       - db
@@ -61,3 +67,5 @@ services:
       - MYSQL_DATABASE=drupal
       - MYSQL_ROOT_PASSWORD=drupal
 ```
+
+備註：如果參數太長，是可以考慮使用env_file來解決參數問題
