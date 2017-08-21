@@ -28,6 +28,9 @@
 4. 調整Web根目錄  
 可以根據個人需求調整網頁的根目錄，如果沒有設定根目錄，則這裡的會預設到 /var/www/html
 
+5. Composer支援
+由於在D8上面需要composer來執行眾多的指令並且更新很多元件，因此，這裡預設安裝composer進來
+
 ## 支援環境變數
 1. SSH_KEY
 2. UPLOAD_MAX_FILESIZE
