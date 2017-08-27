@@ -1,5 +1,6 @@
-# from https://www.drupal.org/requirements/php#drupalversions
 FROM php:7.0-fpm
+
+MAINTAINER victor.yang@hellosanta.com.tw
 
 # install the PHP extensions we need
 RUN set -ex \
@@ -22,9 +23,35 @@ RUN set -ex \
 
 WORKDIR /var/www/html
 
-# drush
-RUN php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush
-RUN php drush core-status
-RUN chmod +x drush
-RUN mv drush /usr/local/bin
-RUN drush init -y
+# Install Memcached for php 7
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+		&& pecl install memcached-3.0.3 \
+		&& docker-php-ext-enable memcached
+
+# Install openssh && nano && supervisor && drush
+RUN apt-get update && apt-get install -y openssh-server nano supervisor && php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush \
+    && php drush core-status \
+		&& chmod +x drush \
+		&& mv drush /usr/local/bin \
+		&& drush init -y
+
+# Install mysql-clients && rsync. In order to sync database with the container
+RUN apt-get install -y rsync mysql-client
+
+# Install Composer In order to use compose
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# ADD Configuration to the Container
+ADD conf/supervisord.conf /etc/supervisord.conf
+ADD conf/nginx.conf /etc/nginx/nginx.conf
+ADD conf/default   /etc/nginx/sites-available/default
+ADD conf/nginx.conf /etc/nginx/
+
+# Add Scripts
+ADD scripts/start.sh /start.sh
+RUN chmod 755 /start.sh
+
+
+EXPOSE 443 80
+
+CMD ["/start.sh"]
