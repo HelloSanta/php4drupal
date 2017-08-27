@@ -3,7 +3,7 @@ FROM php:7.1-apache
 MAINTAINER victor.yang@hellosanta.com.tw
 
 # Add Healthcheck
-HEALTHCHECK --timeout=1s --interval=1s --retries=3 \
+HEALTHCHECK --timeout=30s --interval=30s --retries=10 \
   CMD curl -s --fail http://localhost:80/ || exit 1
 
 RUN a2enmod rewrite
