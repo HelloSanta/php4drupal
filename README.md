@@ -5,7 +5,7 @@
 [![Docker Stars](https://img.shields.io/docker/stars/hellosanta/php4drupal.svg)](https://hub.docker.com/r/hellosanta/php4drupal/)
 [![HelloSanta](https://img.shields.io/badge/Company-HelloSanta-red.svg)](http://www.hellosanta.com.tw/)
 [![Drupal](https://img.shields.io/badge/drupal%207.56-Passed-green.svg)](http://www.hellosanta.com.tw/)
-[![Drupal](https://img.shields.io/badge/drupal%208.35-Passed-green.svg)](http://www.hellosanta.com.tw/)
+[![Drupal](https://img.shields.io/badge/drupal%208.36-Passed-green.svg)](http://www.hellosanta.com.tw/)
 
 ## 簡介
 由於在開發網頁的過程當中，環境實在是太重要了。為了省很多麻煩，所以統一由Docker來統一全部的開發與正式的環境。而我主要在開發的程式Drupal，所以期望建構一個好用的映像檔，可以針對不同版本（Nginx、Apache、Php）版本進行切換環境，並且搭配Docker-compose達到非常好的使用效果。若由任何適合改進的地方，可以一起改進，讓整個系統完善
@@ -30,6 +30,9 @@
 
 5. Composer支援
 由於在D8上面需要composer來執行眾多的指令並且更新很多元件，因此，這裡預設安裝composer進來
+
+6. Healthy Check支援
+已經原生將Healthy Check加入影像檔之中，可以通過status看到容器的狀態
 
 ## 支援環境變數
 1. SSH_KEY
