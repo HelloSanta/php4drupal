@@ -2,6 +2,10 @@ FROM php:5.6-apache
 
 MAINTAINER victor.yang@hellosanta.com.tw
 
+# Add Healthcheck
+HEALTHCHECK --timeout=1s --interval=1s --retries=3 \
+  CMD curl -s --fail http://localhost:80/ || exit 1
+
 RUN a2enmod rewrite
 
 RUN set -ex \
