@@ -32,8 +32,8 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 		&& pecl install memcached-3.0.3 \
 		&& docker-php-ext-enable memcached
 
-# Install openssh && nano && supervisor && drush
-RUN apt-get update && apt-get install -y openssh-server nano supervisor && php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush \
+# Install openssh && nano && supervisor && drush && git
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://s3.amazonaws.com/files.drush.org/drush.phar');" > drush \
     && php drush core-status \
 		&& chmod +x drush \
 		&& mv drush /usr/local/bin \
