@@ -1,4 +1,4 @@
-FROM php:5.6-apache
+FROM orsolin/docker-php-5.3-apache
 
 MAINTAINER victor.yang@hellosanta.com.tw
 
