@@ -2,10 +2,6 @@ FROM php:7.0-apache
 
 MAINTAINER victor.yang@hellosanta.com.tw
 
-# Add Healthcheck
-HEALTHCHECK --timeout=30s --interval=30s --retries=10 \
-  CMD curl -s --fail http://localhost:80/ || exit 1
-
 RUN a2enmod rewrite
 
 # install the PHP extensions we need
