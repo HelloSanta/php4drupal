@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 FROM php:7.2-apache
-=======
-FROM php:7.2-rc-apache
->>>>>>> fe2d4d5f3859a918670e13bcf65a3a5fe11f512a
 
 MAINTAINER victor.yang@hellosanta.com.tw
 
