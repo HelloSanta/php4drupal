@@ -6,7 +6,7 @@ MAINTAINER victor.yang@hellosanta.com.tw
 RUN set -ex; \
 	\
 	if command -v a2enmod; then \
-		a2enmod rewrite; \
+		a2enmod rewrite headers; \
 	fi; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
