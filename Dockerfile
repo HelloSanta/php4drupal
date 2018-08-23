@@ -3,6 +3,7 @@ FROM php:7.0-apache
 MAINTAINER victor.yang@hellosanta.com.tw
 
 RUN a2enmod rewrite
+RUN a2enmod headers
 
 # install the PHP extensions we need
 RUN set -ex; \
