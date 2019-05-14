@@ -26,6 +26,7 @@ RUN set -ex; \
 		pdo_pgsql \
 		zip \
 		exif \
+		bz2 \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
