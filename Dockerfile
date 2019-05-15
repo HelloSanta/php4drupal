@@ -18,7 +18,6 @@ RUN set -ex; \
 		libpq-dev \
 		libbz2-dev \
 		libxml2-dev \
-		php-soap \
 	; \
 	\
 	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
