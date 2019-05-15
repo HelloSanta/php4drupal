@@ -16,7 +16,7 @@ RUN set -ex; \
 		libjpeg-dev \
 		libpng-dev \
 		libpq-dev \
-		bzip2-dev \
+		libbz2-dev \
 	; \
 	\
 	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
