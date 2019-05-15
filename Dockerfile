@@ -17,6 +17,8 @@ RUN set -ex; \
 		libpng-dev \
 		libpq-dev \
 		libbz2-dev \
+		libxml2-dev \
+		php-soap \
 	; \
 	\
 	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
@@ -28,6 +30,7 @@ RUN set -ex; \
 		zip \
 		exif \
 		bz2 \
+		soap \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
