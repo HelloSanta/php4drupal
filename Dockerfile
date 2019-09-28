@@ -1,4 +1,4 @@
-FROM php:7.2-apache
+FROM php:7.3-apache
 
 MAINTAINER victor.yang@hellosanta.com.tw
 
