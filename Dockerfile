@@ -1,31 +1,37 @@
-FROM php:7.3-apache
+FROM php:7.3-apache-stretch
 
 MAINTAINER victor.yang@hellosanta.com.tw
 
 # install the PHP extensions we need
-RUN set -ex; \
+RUN set -eux; \
 	\
 	if command -v a2enmod; then \
-		a2enmod rewrite headers; \
+		a2enmod rewrite; \
 	fi; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
+		libfreetype6-dev \
 		libjpeg-dev \
 		libpng-dev \
 		libpq-dev \
+		libzip-dev \
 	; \
 	\
-	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr; \
+	docker-php-ext-configure gd \
+		--with-freetype-dir=/usr \
+		--with-jpeg-dir=/usr \
+		--with-png-dir=/usr \
+	; \
+	\
 	docker-php-ext-install -j "$(nproc)" \
 		gd \
 		opcache \
 		pdo_mysql \
 		pdo_pgsql \
 		zip \
-		exif \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -41,6 +47,7 @@ RUN set -ex; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*
+	
 
 # Install Memcached for php 7
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
