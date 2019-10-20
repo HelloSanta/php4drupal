@@ -28,6 +28,7 @@ RUN set -ex; \
 		zip \
 		exif \
 		bz2 \
+		bcmath \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
