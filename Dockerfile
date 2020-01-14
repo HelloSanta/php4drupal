@@ -31,6 +31,7 @@ RUN set -ex; \
 		bz2 \
 		bcmath \
 		soap \
+		sockets \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
