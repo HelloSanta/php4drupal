@@ -48,10 +48,20 @@ RUN set -eux; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*
 	
+# set recommended PHP.ini settings
+# see https://secure.php.net/manual/en/opcache.installation.php
+RUN { \
+	echo 'opcache.memory_consumption=128'; \
+	echo 'opcache.interned_strings_buffer=8'; \
+	echo 'opcache.max_accelerated_files=4000'; \
+	echo 'opcache.revalidate_freq=60'; \
+	echo 'opcache.fast_shutdown=1'; \
+	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
 
 # Install Memcached for php 7
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-		&& pecl install memcached-3.0.3 \
+		&& pecl install memcached \
 		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && drush && git
