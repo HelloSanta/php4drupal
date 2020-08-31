@@ -86,6 +86,9 @@ ADD conf/php.ini /usr/local/etc/php/
 ADD scripts/start.sh /start.sh
 RUN chmod 755 /start.sh
 
+# Create user and group
+RUN groupadd -r hellosanta && useradd --no-log-init -r -g hellosanta hellosanta
+
 
 EXPOSE 443 80
 
