@@ -88,7 +88,7 @@ RUN chmod 755 /start.sh
 
 # Create user and group
 RUN groupadd -r hellosanta && useradd --no-log-init -r -g hellosanta hellosanta
-RUN /home/backup
+RUN mkdir /home/backup
 RUN chown hellosanta:hellosanta /home/backup
 
 EXPOSE 443 80
