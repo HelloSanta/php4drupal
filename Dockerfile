@@ -15,12 +15,14 @@ RUN set -ex; \
 	apt-get install -y --no-install-recommends \
 		libjpeg-dev \
 		libpng-dev \
+		libfreetype6-dev \
+		libjpeg62-turbo-dev \
 		libpq-dev \
 		libbz2-dev \
 	    libxml2-dev \
 	; \
 	\
-	docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr --with-freetype-dir=/usr/include/; \
+	docker-php-ext-configure gd --with-freetype-dir=/usr --with-png-dir=/usr --with-jpeg-dir=/usr; \
 	docker-php-ext-install -j "$(nproc)" \
 		gd \
 		opcache \
