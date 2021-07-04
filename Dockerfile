@@ -48,7 +48,7 @@ RUN set -eux; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*
-	
+
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
@@ -66,7 +66,7 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && drush && git
-RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.1.17/drush.phar');" > drush \
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.4.8/drush.phar');" > drush \
     && php drush core-status \
 		&& chmod +x drush \
 		&& mv drush /usr/local/bin \
@@ -76,7 +76,7 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git && p
 RUN apt-get install -y rsync default-mysql-client
 
 # Install Composer In order to use compose
-RUN curl -sS https://getcomposer.org/installer | php -- --version=1.10.17 --install-dir=/usr/local/bin --filename=composer
+RUN curl -sS https://getcomposer.org/installer | php -- --version=1.10.22 --install-dir=/usr/local/bin --filename=composer
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
