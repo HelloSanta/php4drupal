@@ -19,9 +19,8 @@ RUN set -eux; \
 	; \
 	\
 	docker-php-ext-configure gd \
-		--with-freetype-dir=/usr \
-		--with-jpeg-dir=/usr \
-		--with-png-dir=/usr \
+		--with-freetype \
+		--with-jpeg=/usr \
 	; \
 	\
 	docker-php-ext-install -j "$(nproc)" \
@@ -74,7 +73,7 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git && p
 RUN apt-get install -y rsync default-mysql-client
 
 # Install Composer In order to use compose
-RUN curl -sS https://getcomposer.org/installer | php -- --version=1.10.22 --install-dir=/usr/local/bin --filename=composer
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
