@@ -12,8 +12,11 @@ RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		libfreetype6-dev \
+		libjpeg62-turbo-dev \
 		libjpeg-dev \
 		libpng-dev \
+		libwebp-dev \
+		libxpm-dev \
 		libpq-dev \
 		libzip-dev \
 	; \
@@ -21,6 +24,8 @@ RUN set -eux; \
 	docker-php-ext-configure gd \
 		--with-freetype \
 		--with-jpeg=/usr \
+		--with-webp=/usr \
+		--with-xpm=/usr \
 	; \
 	\
 	docker-php-ext-install -j "$(nproc)" \
@@ -63,7 +68,7 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && drush && git
-RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.4.8/drush.phar');" > drush \
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/10.6.0/drush.phar');" > drush \
     && php drush core-status \
 		&& chmod +x drush \
 		&& mv drush /usr/local/bin \
