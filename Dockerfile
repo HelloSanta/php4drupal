@@ -67,8 +67,12 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 		&& pecl install memcached \
 		&& docker-php-ext-enable memcached
 
-# Install openssh && nano && supervisor && git
-RUN apt-get update && apt-get install -y openssh-server nano supervisor git
+# Install openssh && nano && supervisor && drush && git
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.4.8/drush.phar');" > drush \
+    && php drush core-status \
+		&& chmod +x drush \
+		&& mv drush /usr/local/bin \
+		&& drush init -y
 
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
