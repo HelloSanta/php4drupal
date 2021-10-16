@@ -21,12 +21,11 @@ steps:
     urls:
       from_secret: mattermost_webhook
     content_type: application/json
+    debug: true
     template: |
       {
-        "owner": "{{ repo.owner }}",
-        "repo": "{{ repo.name }}",
-        "status": "{{ build.status }}",
-        "channel": "s3o98479njgnjdb34tw47tad1a"
+        "channel": "docker-build-automation"
+        "username": "test-automation",
         "text": "sample"
       }
   when:
