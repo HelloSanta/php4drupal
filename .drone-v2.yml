@@ -13,15 +13,4 @@ steps:
     password:
       from_secret: docker_password
     repo: hellosanta/php4drupal
-    tag: php7.4-apache
-
-- name: mattermost-notify
-  image: hellosanta/drone-mattermost
-  url: https://chat.hellosanta.tw
-  token:
-    from_secret: mattermost_token
-  channel_id:
-    from_secret: mattermost_channel_id
-  only_match_email: true
-  to: '["victor:victor.yang@hellosanta.com.tw", "eddie:eddie.liu@hellosanta.com.tw", "ching84968:may.xiang@hellosanta.com.tw", "michael_chen:michael.chen@hellosanta.com.tw", "sun:sun.liu@hellosanta.com.tw"], "shang_huang:shang.huang@hellosanta.com.tw"'
-  message: "專案:[build.repo_name] 分支:[build.branch] 執行編號:[build.number] 訊息:[build.commit_message]  建立狀態:[build.status]  查看連結:[build.link]"
+    tag: latest
