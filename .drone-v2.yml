@@ -12,14 +12,14 @@ steps:
     remote: git@github.com:HelloSanta/php4drupal.git
     force: false
     commit: true
-    key:
+    ssh_key:
       from_secret: ssh_key
 
 - name: mattermost
   image: dabankio/drone-plugin-mattermost
   environment:
     token:
-        from_secret: mattermost_token
+      from_secret: mattermost_token
     host:
         from_secret: mattermost_host
     channel:
