@@ -12,21 +12,23 @@ steps:
     remote: git@github.com:HelloSanta/php4drupal.git
     force: false
     commit: true
-    ssh_key: 
+    ssh_key:
       from_secret: ssh_key
 
-- name: mattermost
-  image: hellosanta/drone-mattermost
-  environment:
-    url:
-      from_secret: mattermost_host
-    token:
-      from_secret: mattermost_token
-    channel_id:
-      from_secret: mattermost_channel
-    only_match_email: true
-    to: '["victor:victor.yang@hellosanta.com.tw", "eddie:eddie.liu@hellosanta.com.tw", "ching84968:may.xiang@hellosanta.com.tw", "jimmy:jimmy.weng@hellosanta.com.tw", "michael_chen:michael.chen@hellosanta.com.tw", "sun:sun.liu@hellosanta.com.tw"]'
-    message: "專案:[build.repo_name] 分支:[build.branch] 執行編號:[build.number] 訊息:[build.commit_message]  建立狀態:[build.status]  查看連結:[build.link]"
+- name: send
+  image: plugins/webhook
+  settings:
+    urls:
+      from_secret: mattermost_webhook
+    content_type: application/json
+    template: |
+      {
+        "owner": "{{ repo.owner }}",
+        "repo": "{{ repo.name }}",
+        "status": "{{ build.status }}",
+        "channel": "s3o98479njgnjdb34tw47tad1a"
+        "text": "sample"
+      }
   when:
     status:
     - failure
