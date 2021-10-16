@@ -24,3 +24,7 @@ steps:
         from_secret: mattermost_channel
   settings:
     maxRetry: 3
+  when:
+    status:
+    - failure
+    - success
