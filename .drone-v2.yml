@@ -6,7 +6,7 @@ type: docker
 
 steps:
 - name: push commit
-  image: appleboy/drone-git-push
+  image: appleboy/drone-git-push:0.2.0-linux-amd64
   settings:
     branch: create-notify
     remote: git@github.com:HelloSanta/php4drupal.git
