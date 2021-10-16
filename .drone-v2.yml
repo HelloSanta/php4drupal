@@ -15,7 +15,7 @@ steps:
     repo: hellosanta/php4drupal
     tag: php7.4-apache
 
-- mattermost-notify:
+- name: mattermost-notify
   image: hellosanta/drone-mattermost
   url: https://chat.hellosanta.tw
   token:
