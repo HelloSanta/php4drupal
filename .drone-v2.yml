@@ -21,12 +21,11 @@ steps:
     urls:
       from_secret: mattermost_webhook
     content_type: application/json
-    debug: true
     template: |
       {
-        "channel": "docker-build-automation"
-        "username": "test-automation",
-        "text": "sample"
+        "channel": "docker-build-automation",
+        "username": "Docker通知機器人",
+        "text": "專案:{{ build.repo_name }} 分支:{{ build.branch }} 執行編號:{{ build.number }} 訊息:{{ build.commit_message }}  建立狀態:{{ build.status }}  查看連結:{{ build.link }}"
       }
   when:
     status:
