@@ -15,7 +15,7 @@ steps:
     ssh_key:
       from_secret: ssh_key
 
-- name: send
+- name: mattermost-notify
   image: plugins/webhook
   settings:
     urls:
