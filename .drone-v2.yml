@@ -5,15 +5,6 @@ type: docker
 
 
 steps:
-# - name: docker
-#   image: plugins/docker
-#   settings:
-#     username:
-#       from_secret: docker_name
-#     password:
-#       from_secret: docker_password
-#     repo: hellosanta/php4drupal
-#     tag: latest
 - name: mattermost
   image: dabankio/drone-plugin-mattermost
   environment:
