@@ -5,6 +5,16 @@ type: docker
 
 
 steps:
+- name: push commit
+  image: appleboy/drone-git-push
+  settings:
+    branch: create-notify
+    remote: git@github.com:HelloSanta/php4drupal.git
+    force: false
+    commit: true
+    ssh_key:
+      from_secret: ssh_key
+
 - name: mattermost
   image: dabankio/drone-plugin-mattermost
   environment:
