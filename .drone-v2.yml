@@ -14,16 +14,17 @@ steps:
     commit: true
 
 - name: mattermost
-  image: dabankio/drone-plugin-mattermost:4
+  image: hellosanta/drone-mattermost
   environment:
+    url:
+      from_secret: mattermost_host
     token:
       from_secret: mattermost_token
-    host:
-        from_secret: mattermost_host
-    channel:
-        from_secret: mattermost_channel
-  settings:
-    maxRetry: 3
+    channel_id:
+      from_secret: mattermost_channel
+    only_match_email: true
+    to: '["victor:victor.yang@hellosanta.com.tw", "eddie:eddie.liu@hellosanta.com.tw", "ching84968:may.xiang@hellosanta.com.tw", "jimmy:jimmy.weng@hellosanta.com.tw", "michael_chen:michael.chen@hellosanta.com.tw", "sun:sun.liu@hellosanta.com.tw"]'
+    message: "專案:[build.repo_name] 分支:[build.branch] 執行編號:[build.number] 訊息:[build.commit_message]  建立狀態:[build.status]  查看連結:[build.link]"
   when:
     status:
     - failure
