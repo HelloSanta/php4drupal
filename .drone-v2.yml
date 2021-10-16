@@ -13,6 +13,6 @@ steps:
     password:
       from_secret: docker_password
     repo: hellosanta/php4drupal
-    tag: latest
+    tag: php7.4-apache
 
 
