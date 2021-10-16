@@ -18,7 +18,7 @@ steps:
 - name: push commit
   image: appleboy/drone-git-push:0.2.0-linux-amd64
   settings:
-    branch: {{ build.branch }}
+    branch: php7.4-apache
     remote: git@github.com:HelloSanta/php4drupal.git
     force: false
     commit: true
