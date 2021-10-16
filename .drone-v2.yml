@@ -12,6 +12,8 @@ steps:
     remote: git@github.com:HelloSanta/php4drupal.git
     force: false
     commit: true
+    ssh_key: 
+      from_secret: ssh_key
 
 - name: mattermost
   image: hellosanta/drone-mattermost
