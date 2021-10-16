@@ -14,7 +14,7 @@ steps:
     commit: true
 
 - name: mattermost
-  image: dabankio/drone-plugin-mattermost
+  image: dabankio/drone-plugin-mattermost:4
   environment:
     token:
       from_secret: mattermost_token
