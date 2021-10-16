@@ -25,13 +25,14 @@ steps:
       {
         "channel": "docker-build-automation",
         "username": "Docker自動部署小幫手",
-        "text": "* 建立狀態: **{{ build.status }}**
-        * 專案:{{ repo.name }}
-        * 分支:{{ build.branch }}
-        * 執行編號:{{ build.number }}
-        * 訊息:{{ build.message }}
-        * 作者:{{ build.author_name }}
-        * 查看連結:{{ build.link }}"
+        "text": "
+      * 建立狀態: `{{ build.status }}`
+      * 專案:{{ repo.name }}
+      * 分支:{{ build.branch }}
+      * 執行編號:{{ build.number }}
+      * 訊息:{{ build.message }}
+      * 作者:{{ build.author }}
+      * 查看連結:{{ build.link }}"
       }
   when:
     status:
