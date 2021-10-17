@@ -1,11 +1,6 @@
 # PHP4Drupal
 
-[![Docker Automated buil](https://img.shields.io/docker/automated/hellosanta/php4drupal.svg)](https://hub.docker.com/r/hellosanta/php4drupal/)
-[![Docker Build Statu](https://img.shields.io/docker/build/hellosanta/php4drupal.svg)](https://hub.docker.com/r/hellosanta/php4drupal/)
-[![Docker Stars](https://img.shields.io/docker/stars/hellosanta/php4drupal.svg)](https://hub.docker.com/r/hellosanta/php4drupal/)
-[![HelloSanta](https://img.shields.io/badge/Company-HelloSanta-red.svg)](http://www.hellosanta.com.tw/)
-[![Drupal](https://img.shields.io/badge/drupal%207.56-Passed-green.svg)](http://www.hellosanta.com.tw/)
-[![Drupal](https://img.shields.io/badge/drupal%208.36-Passed-green.svg)](http://www.hellosanta.com.tw/)
+[![Build Status](https://drone-v2.hellosanta.tw/api/badges/docker/php4drupal/status.svg?ref=refs/heads/php7.0-apache)](https://drone-v2.hellosanta.tw/docker/php4drupal)
 
 ## 簡介
 由於在開發網頁的過程當中，環境實在是太重要了。為了省很多麻煩，所以統一由Docker來統一全部的開發與正式的環境。而我主要在開發的程式Drupal，所以期望建構一個好用的映像檔，可以針對不同版本（Nginx、Apache、Php）版本進行切換環境，並且搭配Docker-compose達到非常好的使用效果。若由任何適合改進的地方，可以一起改進，讓整個系統完善
@@ -16,16 +11,16 @@
 另外，這個影像檔會需要使用者自行把網頁程式同步進去到容器內，因此並非安裝完畢之後，Drupal或其他的CMS立刻就安裝好了，這個Image比較偏向具備一些Docker知識的人使用。
 
 ## 主要功能
-1. Tag來區分版本:  
+1. Tag來區分版本:
 這個影像檔會根據Tag來區分不同的環境，主要包含Nginx+Php-FPM 跟 Apache這兩類，可以看各自的需求進行版本的切換，搭配docker-compose會有很好的效果
 
-2. SSH支援  
+2. SSH支援
 由於開發的需要或某一些特殊的需求，我們會需要連進入容器進行處理，因此這個影像檔有提供SSH的支援，只需要將Public key當作參數丟進來，就可以使用Private Key連到容器內。
 
-3. 調整Apache的環境  
+3. 調整Apache的環境
 由於每個容器可能會需要調整上傳檔案大小、記憶體、Max_input_vars等重要的變數，因此這個部分將可以直接寫在environment的變數中，直接做調整。
 
-4. 調整Web根目錄  
+4. 調整Web根目錄
 可以根據個人需求調整網頁的根目錄，如果沒有設定根目錄，則這裡的會預設到 /var/www/html
 
 5. Composer支援
@@ -45,8 +40,8 @@
 如果你想要用的是docker-compose的方法來使用這個Image的話，可以參考下面的範例
 
 ```
-version: "2"  
-services:  
+version: "2"
+services:
   web:
     image: hellosanta/php4drupal:php7.0-apache
     ports:
