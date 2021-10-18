@@ -1,7 +1,5 @@
 FROM php:7.1-apache
 
-MAINTAINER victor.yang@hellosanta.com.tw
-
 # install the PHP extensions we need
 RUN set -ex; \
 	\
