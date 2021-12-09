@@ -72,8 +72,12 @@ RUN apt-get install -y rsync default-mysql-client
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
 # Install drush
-RUN composer global require drush/drush && \
-    composer global update
+RUN git clone https://github.com/drush-ops/drush.git /usr/local/src/drush \
+	&& cd /usr/local/src/drush \
+	&& git checkout 10.6.1 \
+	&& ln -s /usr/local/src/drush/drush /usr/bin/drush \
+	&& composer install \
+	&& drush --version
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
