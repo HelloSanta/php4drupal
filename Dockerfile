@@ -1,4 +1,4 @@
-FROM php:7.4-apache-buster
+FROM php:8.0-apache-buster
 
 # install the PHP extensions we need
 RUN set -eux; \
@@ -62,23 +62,18 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 
-# Install Memcached for php 7
-RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-		&& pecl install memcached \
-		&& docker-php-ext-enable memcached
-
-# Install openssh && nano && supervisor && drush && git
-RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.4.8/drush.phar');" > drush \
-    && php drush core-status \
-		&& chmod +x drush \
-		&& mv drush /usr/local/bin \
-		&& drush init -y
+# Install openssh && nano && supervisor && git
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git
 
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
 
 # Install Composer In order to use compose
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
+
+# Install drush
+RUN composer global require drush/drush && \
+    composer global update
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
