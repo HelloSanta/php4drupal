@@ -34,6 +34,7 @@ RUN set -eux; \
 		pdo_mysql \
 		pdo_pgsql \
 		zip \
+		unzip \
 		bcmath \
 	; \
 	\
