@@ -1,7 +1,5 @@
 FROM php:7.3-apache-stretch
 
-MAINTAINER victor.yang@hellosanta.com.tw
-
 # install the PHP extensions we need
 RUN set -eux; \
 	\
