@@ -14,3 +14,13 @@ steps:
       from_secret: docker_password
     repo: hellosanta/php4drupal
     tag: latest
+
+- name: push commit
+  image: appleboy/drone-git-push:0.2.0-linux-amd64
+  settings:
+    branch: master
+    remote: git@github.com:HelloSanta/php4drupal.git
+    force: false
+    commit: true
+    ssh_key:
+      from_secret: ssh_key
