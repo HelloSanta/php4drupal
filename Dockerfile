@@ -19,6 +19,7 @@ RUN set -eux; \
 		libxpm-dev \
 		libpq-dev \
 		libzip-dev \
+		unzip \
 	; \
 	\
 	docker-php-ext-configure gd \
@@ -34,7 +35,6 @@ RUN set -eux; \
 		pdo_mysql \
 		pdo_pgsql \
 		zip \
-		unzip \
 		bcmath \
 	; \
 	\
