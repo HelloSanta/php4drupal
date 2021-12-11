@@ -19,7 +19,6 @@ RUN set -eux; \
 		libxpm-dev \
 		libpq-dev \
 		libzip-dev \
-		unzip \
 	; \
 	\
 	docker-php-ext-configure gd \
@@ -63,8 +62,8 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 
-# Install openssh && nano && supervisor && git
-RUN apt-get update && apt-get install -y openssh-server nano supervisor git
+# Install openssh && nano && supervisor && git && unzip
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
 
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
