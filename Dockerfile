@@ -35,6 +35,7 @@ RUN set -eux; \
 		pdo_pgsql \
 		zip \
 		bcmath \
+		exif \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
