@@ -1,0 +1,50 @@
+name: default
+
+kind: pipeline
+type: docker
+
+
+steps:
+- name: docker
+  image: plugins/docker
+  settings:
+    username:
+      from_secret: docker_name
+    password:
+      from_secret: docker_password
+    repo: hellosanta/php4drupal
+    tag: php7.2-apache
+
+- name: push commit
+  image: appleboy/drone-git-push:0.2.0-linux-amd64
+  settings:
+    branch: php7.2-apache
+    remote: git@github.com:HelloSanta/php4drupal.git
+    force: false
+    commit: true
+    ssh_key:
+      from_secret: ssh_key
+
+- name: mattermost-notify
+  image: plugins/webhook
+  settings:
+    urls:
+      from_secret: mattermost_webhook
+    content_type: application/json
+    template: |
+      {
+        "channel": "docker-build-automation",
+        "username": "Docker自動部署小幫手",
+        "text": "
+      * 建立狀態: `{{ build.status }}`
+      * 專案:{{ repo.name }}
+      * 分支:{{ build.branch }}
+      * 執行編號:{{ build.number }}
+      * 訊息:{{ build.message }}
+      * 作者:{{ build.author }}
+      * 查看連結:{{ build.link }}"
+      }
+  when:
+    status:
+    - failure
+    - success
