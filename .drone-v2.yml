@@ -13,12 +13,12 @@ steps:
     password:
       from_secret: docker_password
     repo: hellosanta/php4drupal
-    tag: php8.0-apache
+    tag: php8.1-apache
 
 - name: push commit
   image: appleboy/drone-git-push:0.2.0-linux-amd64
   settings:
-    branch: php8.0-apache
+    branch: php8.1-apache
     remote: git@github.com:HelloSanta/php4drupal.git
     force: false
     commit: true
