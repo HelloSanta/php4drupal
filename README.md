@@ -1,6 +1,6 @@
 # PHP4Drupal
 
-[![Build Status](https://drone.hellosanta.tw/api/badges/docker/php4drupal/status.svg?ref=refs/heads/php8.0-apache)](https://drone.hellosanta.tw/docker/php4drupal)
+[![Build Status](https://drone.hellosanta.tw/api/badges/docker/php4drupal/status.svg?ref=refs/heads/php8.1-apache)](https://drone.hellosanta.tw/docker/php4drupal)
 
 
 ## 簡介
