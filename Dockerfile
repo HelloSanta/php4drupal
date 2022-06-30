@@ -80,8 +80,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 # Install drush launcher
 RUN php -r "readfile('https://github.com/drush-ops/drush-launcher/releases/latest/download/drush.phar');" > drush \
 	&& chmod +x drush \
-	&& mv drush /usr/local/bin/drush \
-	&& drush --version
+	&& mv drush /usr/local/bin/drush
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
