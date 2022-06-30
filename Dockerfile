@@ -77,12 +77,10 @@ RUN apt-get install -y rsync default-mysql-client
 # Install Composer In order to use compose
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
-# Install drush
-RUN git clone https://github.com/drush-ops/drush.git /usr/local/src/drush \
-	&& cd /usr/local/src/drush \
-	&& git checkout 11.0.9 \
-	&& ln -s /usr/local/src/drush/drush /usr/bin/drush \
-	&& composer install \
+# Install drush launcher
+RUN wget -O drush.phar https://github.com/drush-ops/drush-launcher/releases/latest/download/drush.phar \
+	&& chmod +x drush.phar \
+	&& sudo mv drush.phar /usr/local/bin/drush \
 	&& drush --version
 
 # ADD Configuration to the Container
