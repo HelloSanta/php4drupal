@@ -35,6 +35,7 @@ RUN set -eux; \
 		pdo_pgsql \
 		zip \
 		bcmath \
+		exif \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -62,8 +63,13 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 
-# Install openssh && nano && supervisor && git
-RUN apt-get update && apt-get install -y openssh-server nano supervisor git
+# Install Memcached for php 8
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+		&& pecl install memcached \
+		&& docker-php-ext-enable memcached
+
+# Install openssh && nano && supervisor && git && unzip
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
 
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
