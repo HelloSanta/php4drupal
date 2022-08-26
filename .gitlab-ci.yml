@@ -35,7 +35,7 @@ Mattermost:
   variables:
     PAYLOAD: '{
       "text": "* 執行狀態: $CI_JOB_STATUS\n* 專案名稱: $CI_PROJECT_NAME\n* 專案分支: $CI_COMMIT_BRANCH\n* 專案作者: @$GITLAB_USER_LOGIN\n* Message: $CI_COMMIT_MESSAGE\n* 查看連結: $CI_PIPELINE_URL",
-      "channel": "sweet-notice",
+      "channel": "docker-build-automation",
       "username": "Gitlab CI/CD"}'
   script:
     - echo $PAYLOAD
