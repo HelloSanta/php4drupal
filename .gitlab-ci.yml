@@ -1,0 +1,39 @@
+image: docker:20.10.16
+
+services:
+  - docker:20.10.16-dind
+
+stages:
+  - build
+  - notify
+
+variables:
+  # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+
+before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+build:
+  stage: build
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+Mattermost:
+  image: curlimages/curl:latest
+  stage: notify
+  before_script:
+    - echo "Start to send notification"
+  variables:
+    PAYLOAD: '{
+      "text": "* 執行狀態: $CI_JOB_STATUS\n* 專案名稱: $CI_PROJECT_NAME\n* 專案分支: $CI_COMMIT_BRANCH\n* 專案作者: @$GITLAB_USER_LOGIN\n* Message: $CI_COMMIT_MESSAGE\n* 查看連結: $CI_PIPELINE_URL",
+      "channel": "sweet-notice",
+      "username": "Gitlab CI/CD"}'
+  script:
+    - echo $PAYLOAD
+    - curl -i -X POST --data-urlencode payload="$PAYLOAD" $mattermost_url
+  when: always
