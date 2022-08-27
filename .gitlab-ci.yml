@@ -15,19 +15,17 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
 
 before_script:
-  # - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
-  - echo $CI_REGISTRY
-  # - echo $CI_REGISTRY_PASSWORD
-  # - echo $CI_REGISTRY
+  - docker info
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
 
 build:
   stage: build
   script:
-     - echo script.
-    # - docker pull $CI_REGISTRY_IMAGE:latest || true
-    # - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:latest .
-    # - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-    # - docker push $CI_REGISTRY_IMAGE:latest
+    - echo script.
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
 
 Mattermost:
   image: curlimages/curl:latest
