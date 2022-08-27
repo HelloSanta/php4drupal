@@ -15,10 +15,10 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
 
 before_script:
-  # - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  - echo $CI_REGISTRY_USER
-  # - echo $CI_REGISTRY_PASSWORD
+  # - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
   - echo $CI_REGISTRY
+  # - echo $CI_REGISTRY_PASSWORD
+  # - echo $CI_REGISTRY
 
 build:
   stage: build
