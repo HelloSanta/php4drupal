@@ -16,9 +16,9 @@ variables:
 
 before_script:
   # - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-   - echo $CI_REGISTRY_USER
-   - echo $CI_REGISTRY_PASSWORD
-    - ech $CI_REGISTRY
+  - echo $CI_REGISTRY_USER
+  # - echo $CI_REGISTRY_PASSWORD
+  - echo $CI_REGISTRY
 
 build:
   stage: build
@@ -36,10 +36,10 @@ Mattermost:
     - echo "Start to send notification"
   variables:
     PAYLOAD: '{
-      "text": "* 執行狀態: $CI_JOB_STATUS\n* 專案名稱: $CI_PROJECT_NAME\n* 專案分支: $CI_COMMIT_BRANCH\n* 專案作者: @$GITLAB_USER_LOGIN\n* Message: $CI_COMMIT_MESSAGE\n* 查看連結: $CI_PIPELINE_URL",
+      "text": "* 執行狀態: `錯誤`\n* 專案名稱: $CI_PROJECT_NAME\n* 專案分支: $CI_COMMIT_BRANCH\n* 專案作者: @$GITLAB_USER_LOGIN\n* Message: $CI_COMMIT_MESSAGE\n* 查看連結: $CI_PIPELINE_URL",
       "channel": "docker-build-automation",
       "username": "Docker自動部署小幫手"}'
   script:
     - echo $PAYLOAD
     - curl -i -X POST --data-urlencode payload="$PAYLOAD" $mattermost_url
-  when: always
+  when: on_failure
