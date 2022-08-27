@@ -21,15 +21,13 @@ build:
   stage: build
   script:
     - docker pull $CI_REGISTRY_IMAGE:latest || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA --tag $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:latest .
     - docker push $CI_REGISTRY_IMAGE:latest
 
 Mattermost:
   image: curlimages/curl:latest
   stage: notify
-  before_script:
-    - echo "Start to send notification"
+  before_script: []
   variables:
     PAYLOAD: '{
       "text": "* 執行狀態: `錯誤`\n* 專案名稱: $CI_PROJECT_NAME\n* 專案分支: $CI_COMMIT_BRANCH\n* 專案作者: @$GITLAB_USER_LOGIN\n* Message: $CI_COMMIT_MESSAGE\n* 查看連結: $CI_PIPELINE_URL",
