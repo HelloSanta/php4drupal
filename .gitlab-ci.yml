@@ -13,6 +13,7 @@ stages:
 
 variables:
   DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TAG: "latest"
 
 before_script:
   - docker info
@@ -20,8 +21,8 @@ before_script:
 build:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:latest || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:latest --tag $CI_REGISTRY_IMAGE:latest .
+    - docker pull $CI_REGISTRY_IMAGE:$DOCKER_TAG || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:$DOCKER_TAG --tag $CI_REGISTRY_IMAGE:$DOCKER_TAG .
     - docker push $CI_REGISTRY_IMAGE:latest
 
 Mattermost:
