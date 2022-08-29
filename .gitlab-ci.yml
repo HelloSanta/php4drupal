@@ -35,7 +35,7 @@ push:
     - echo "$runner_ssh_key" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - ssh-keyscan git@github.com:HelloSanta/php4drupal.git >> ~/.ssh/known_hosts
+    - ssh-keyscan github.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
     - git status
