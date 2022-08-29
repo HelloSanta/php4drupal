@@ -38,8 +38,11 @@ push:
     - ssh-keyscan github.com >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - git pull github $CI_COMMIT_BRANCH
-    - git push github $CI_COMMIT_BRANCH
+    - git remote show origin
+    - git remote set-url --push origin git@github.com:HelloSanta/php4drupal.git
+    - git remote show origin
+    - git push --follow-tags origin HEAD:$CI_COMMIT_REF_NAME
+
 
 Mattermost:
   image: curlimages/curl:latest
