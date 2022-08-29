@@ -9,6 +9,7 @@ default:
 
 stages:
   - build
+  - push
   - notify
 
 variables:
@@ -24,6 +25,20 @@ build:
     - docker pull $CI_REGISTRY_IMAGE:$DOCKER_TAG || true
     - docker build --cache-from $CI_REGISTRY_IMAGE:$DOCKER_TAG --tag $CI_REGISTRY_IMAGE:$DOCKER_TAG .
     - docker push $CI_REGISTRY_IMAGE:$DOCKER_TAG
+
+push:
+  stage: push
+  image: ubuntu:20.04
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )'
+    - eval $(ssh-agent -s)
+    - echo "$runner_ssh_key" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan git@github.com:HelloSanta/php4drupal.git >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - git status
 
 Mattermost:
   image: curlimages/curl:latest
