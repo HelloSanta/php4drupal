@@ -1,0 +1,58 @@
+image: docker:20.10.16
+
+services:
+  - docker:20.10.16-dind
+
+default:
+  tags:
+    - docker
+
+stages:
+  - build
+  - push
+  - notify
+
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TAG: "php5.6-apache"
+
+before_script:
+  - docker info
+
+build:
+  stage: build
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$DOCKER_TAG || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:$DOCKER_TAG --tag $CI_REGISTRY_IMAGE:$DOCKER_TAG .
+    - docker push $CI_REGISTRY_IMAGE:$DOCKER_TAG
+
+push:
+  stage: push
+  image: ubuntu:20.04
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client git -y )'
+    - eval $(ssh-agent -s)
+    - echo "$runner_ssh_key" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan github.com >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - git remote show origin
+    - git remote set-url --push origin git@github.com:HelloSanta/php4drupal.git
+    - git remote show origin
+    - git push --follow-tags origin HEAD:$CI_COMMIT_REF_NAME
+
+Mattermost:
+  image: curlimages/curl:latest
+  stage: notify
+  before_script: []
+  variables:
+    PAYLOAD: '{
+      "text": "* 執行狀態: `錯誤`\n* 專案名稱: $CI_PROJECT_NAME\n* 專案分支: $CI_COMMIT_BRANCH\n* 專案作者: @$GITLAB_USER_LOGIN\n* Message: $CI_COMMIT_MESSAGE\n* 查看連結: $CI_PIPELINE_URL",
+      "channel": "docker-build-automation",
+      "username": "Docker自動部署小幫手"}'
+  script:
+    - echo $PAYLOAD
+    - curl -i -X POST --data-urlencode payload="$PAYLOAD" $mattermost_url
+  when: on_failure
