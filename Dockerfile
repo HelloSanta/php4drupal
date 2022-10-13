@@ -24,6 +24,7 @@ RUN set -ex; \
 	pdo_pgsql \
 	zip \
 	exif \
+	mysqli \
 	; \
 	\
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -53,7 +54,7 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git && p
 	&& drush init -y
 
 # Install mysql-clients && rsync. In order to sync database with the container
-RUN apt-get install -y rsync mysql-client
+RUN apt-get install -y rsync mysql-client mysql-server
 
 # Install Composer In order to use compose
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
