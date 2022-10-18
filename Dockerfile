@@ -27,7 +27,6 @@ RUN set -ex; \
 	mysqli \
 	mysql \
 	bcmath \
-	imap \
 	; \
 	\
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
