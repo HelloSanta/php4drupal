@@ -26,7 +26,6 @@ RUN set -ex; \
 	exif \
 	mysqli \
 	mysql \
-	imagick \
 	; \
 	\
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -47,6 +46,12 @@ RUN set -ex; \
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 		&& pecl install memcached-2.2.0 \
 		&& docker-php-ext-enable memcached
+
+# Install php-imagick
+RUN apt-get update && apt-get install -y \
+    libmagickwand-dev --no-install-recommends \
+    	&& pecl install imagick \
+		&& docker-php-ext-enable imagick
 
 # Install openssh && nano && supervisor && drush && git
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.1.16/drush.phar');" > drush \
