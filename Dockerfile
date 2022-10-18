@@ -26,7 +26,7 @@ RUN set -ex; \
 	exif \
 	mysqli \
 	mysql \
-	php-imagick \
+	imagick \
 	; \
 	\
 	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
