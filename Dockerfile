@@ -63,6 +63,11 @@ RUN { \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 
+# Install Memcached for php 8
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+		&& pecl install memcached \
+		&& docker-php-ext-enable memcached
+
 # Install openssh && nano && supervisor && git && unzip
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
 
@@ -72,13 +77,10 @@ RUN apt-get install -y rsync default-mysql-client
 # Install Composer In order to use compose
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
-# Install drush
-RUN git clone https://github.com/drush-ops/drush.git /usr/local/src/drush \
-	&& cd /usr/local/src/drush \
-	&& git checkout 10.6.1 \
-	&& ln -s /usr/local/src/drush/drush /usr/bin/drush \
-	&& composer install \
-	&& drush --version
+# Install drush launcher
+RUN php -r "readfile('https://github.com/drush-ops/drush-launcher/releases/latest/download/drush.phar');" > drush \
+	&& chmod +x drush \
+	&& mv drush /usr/local/bin/drush
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
