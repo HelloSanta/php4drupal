@@ -24,7 +24,7 @@ if [ ! -z "$SSH_ID" ]; then
   echo "$SSH_ID" > /root/.ssh/id_ed25519
   sed -i 's/\\n/\
 /g' /root/.ssh/id_ed25519 /root/.ssh/id_ed25519
-  sed "s/\"//g" /root/.ssh/id_ed25519
+  sed -i "s/\"//g" /root/.ssh/id_ed25519
 
   chmod 400 /root/.ssh/id_ed25519
 fi
