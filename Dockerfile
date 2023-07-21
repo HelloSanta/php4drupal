@@ -19,6 +19,7 @@ RUN set -eux; \
 		libxpm-dev \
 		libpq-dev \
 		libzip-dev \
+		libmagickwand-dev \
 	; \
 	\
 	docker-php-ext-configure gd \
@@ -35,6 +36,10 @@ RUN set -eux; \
 		pdo_pgsql \
 		zip \
 		bcmath \
+	; \
+	\
+	pecl install imagick \
+		&& docker-php-ext-enable imagick \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -60,7 +65,6 @@ RUN { \
 	echo 'opcache.revalidate_freq=60'; \
 	echo 'opcache.fast_shutdown=1'; \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
-
 
 # Install Memcached for php 7
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
@@ -88,7 +92,6 @@ ADD conf/php.ini /usr/local/etc/php/
 # Add Scripts
 ADD scripts/start.sh /start.sh
 RUN chmod 755 /start.sh
-
 
 EXPOSE 443 80
 
