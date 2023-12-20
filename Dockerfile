@@ -20,6 +20,7 @@ RUN set -eux; \
 		libpq-dev \
 		libzip-dev \
 		libsodium-dev \
+		libldap2-dev \
 	; \
 	\
 	docker-php-ext-configure gd \
@@ -38,6 +39,7 @@ RUN set -eux; \
 		bcmath \
 		exif \
 		sodium \
+		ldap \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
