@@ -1,4 +1,4 @@
-FROM php:8.0-apache-buster
+FROM php:8.2-apache-buster
 
 # install the PHP extensions we need
 RUN set -eux; \
@@ -19,6 +19,8 @@ RUN set -eux; \
 		libxpm-dev \
 		libpq-dev \
 		libzip-dev \
+		libsodium-dev \
+		libldap2-dev \
 	; \
 	\
 	docker-php-ext-configure gd \
@@ -36,6 +38,8 @@ RUN set -eux; \
 		zip \
 		bcmath \
 		exif \
+		sodium \
+		ldap \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
