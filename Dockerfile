@@ -66,6 +66,9 @@ RUN { \
 	echo 'opcache.fast_shutdown=1'; \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
+# Enable output_buffering
+RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.ini
+
 
 # Install Memcached for php 8
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
