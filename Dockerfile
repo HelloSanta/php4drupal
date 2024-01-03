@@ -81,10 +81,8 @@ RUN apt-get install -y rsync default-mysql-client
 # Install Composer In order to use compose
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
-# Install drush launcher
-RUN php -r "readfile('https://github.com/drush-ops/drush-launcher/releases/latest/download/drush.phar');" > drush \
-	&& chmod +x drush \
-	&& mv drush /usr/local/bin/drush
+# Set the PATH to include ./vendor/bin
+ENV PATH="./vendor/bin:${PATH}"
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
