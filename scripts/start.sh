@@ -54,5 +54,5 @@ if [ ! -z "$HELLOSANTA_GID" ]; then
   groupmod -g "$HELLOSANTA_GID" myuser
 fi
 
-# Start supervisord and services
-exec /usr/bin/supervisord -n -c /etc/supervisord.conf
+# 切换回 myuser 用户
+su myuser -c '/usr/bin/supervisord -n -c /etc/supervisord.conf'
