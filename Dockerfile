@@ -78,6 +78,12 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 # Install openssh && nano && supervisor && git && unzip
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
 
+# Add a non-root user and enable ssh settings permission
+RUN useradd -ms /bin/bash myuser && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    chown myuser:myuser /etc/ssh/sshd_config && \
+    chmod 600 /etc/ssh/sshd_config
+
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
 
@@ -95,7 +101,6 @@ ADD conf/php.ini /usr/local/etc/php/
 # Add Scripts
 ADD scripts/start.sh /start.sh
 RUN chmod 755 /start.sh
-
 
 EXPOSE 443 80
 
