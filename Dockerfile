@@ -81,11 +81,8 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzi
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
 
-# Add a non-root user and enable ssh settings permission
-RUN useradd -ms /bin/bash myuser && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    chown myuser:myuser /etc/ssh/sshd_config && \
-    chmod 600 /etc/ssh/sshd_config
+# Add a non-root user for apache server user
+RUN useradd -ms /bin/bash myuser
 
 # Install Composer In order to use compose
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
