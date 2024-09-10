@@ -14,11 +14,7 @@ stages:
 
 variables:
   DOCKER_TLS_CERTDIR: "/certs"
-<<<<<<< HEAD
   DOCKER_TAG: "latest"
-=======
-  DOCKER_TAG: "php8.3-apache"
->>>>>>> php8.3-apache
 
 before_script:
   - docker info
