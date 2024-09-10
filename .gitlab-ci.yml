@@ -14,7 +14,11 @@ stages:
 
 variables:
   DOCKER_TLS_CERTDIR: "/certs"
+<<<<<<< HEAD
   DOCKER_TAG: "latest"
+=======
+  DOCKER_TAG: "php8.3-apache"
+>>>>>>> php8.3-apache
 
 before_script:
   - docker info
@@ -42,7 +46,6 @@ push:
     - git remote set-url --push origin git@github.com:HelloSanta/php4drupal.git
     - git remote show origin
     - git push --follow-tags origin HEAD:$CI_COMMIT_REF_NAME
-
 
 Mattermost:
   image: curlimages/curl:latest

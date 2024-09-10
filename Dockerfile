@@ -1,4 +1,4 @@
-FROM php:8.0-apache-buster
+FROM php:8.3-apache-bullseye
 
 # install the PHP extensions we need
 RUN set -eux; \
@@ -19,6 +19,8 @@ RUN set -eux; \
 		libxpm-dev \
 		libpq-dev \
 		libzip-dev \
+		libsodium-dev \
+		libldap2-dev \
 	; \
 	\
 	docker-php-ext-configure gd \
@@ -36,6 +38,8 @@ RUN set -eux; \
 		zip \
 		bcmath \
 		exif \
+		sodium \
+		ldap \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -62,6 +66,14 @@ RUN { \
 	echo 'opcache.fast_shutdown=1'; \
 	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
+# Enable output_buffering
+RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.ini
+
+
+# Install Memcached for php 8
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+		&& pecl install memcached \
+		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
@@ -69,16 +81,14 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzi
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
 
+# Add a non-root user for apache server user
+RUN useradd -ms /bin/bash myuser
+
 # Install Composer In order to use compose
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
-# Install drush
-RUN git clone https://github.com/drush-ops/drush.git /usr/local/src/drush \
-	&& cd /usr/local/src/drush \
-	&& git checkout 10.6.1 \
-	&& ln -s /usr/local/src/drush/drush /usr/bin/drush \
-	&& composer install \
-	&& drush --version
+# Set the PATH to include ./vendor/bin
+ENV PATH="./vendor/bin:${PATH}"
 
 # ADD Configuration to the Container
 ADD conf/supervisord.conf /etc/supervisord.conf
@@ -88,7 +98,6 @@ ADD conf/php.ini /usr/local/etc/php/
 # Add Scripts
 ADD scripts/start.sh /start.sh
 RUN chmod 755 /start.sh
-
 
 EXPOSE 443 80
 

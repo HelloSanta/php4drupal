@@ -18,6 +18,17 @@ if [ ! -z "$SSH_KEY" ]; then
   echo "$SSH_KEY" > /root/.ssh/authorized_keys
 fi
 
+## Add id_ed25519 if exists.
+if [ ! -z "$SSH_ID" ]; then
+  mkdir -p /root/.ssh/
+  echo "$SSH_ID" > /root/.ssh/id_ed25519
+  sed -i 's/\\n/\
+/g' /root/.ssh/id_ed25519 /root/.ssh/id_ed25519
+  sed -i "s/\"//g" /root/.ssh/id_ed25519
+
+  chmod 400 /root/.ssh/id_ed25519
+fi
+
 if [ ! -z "$UPLOAD_MAX_FILESIZE" ];then
   sed -i "s@upload_max_filesize = 10M@upload_max_filesize = ${UPLOAD_MAX_FILESIZE}M@g" /usr/local/etc/php/php.ini
 fi
@@ -37,6 +48,15 @@ fi
 if [ ! -z "$WEB_ROOT" ];then
   sed -i "s@DocumentRoot /var/www/html@DocumentRoot ${WEB_ROOT}@g" /etc/apache2/sites-available/000-default.conf
   sed -i "s@Directory /var/www/html@Directory ${WEB_ROOT}@g" /etc/apache2/apache2.conf
+fi
+
+# Set up UID and GID
+if [ ! -z "$HELLOSANTA_UID" ]; then
+  usermod -u "$HELLOSANTA_UID" myuser
+fi
+
+if [ ! -z "$HELLOSANTA_GID" ]; then
+  groupmod -g "$HELLOSANTA_GID" myuser
 fi
 
 # Start supervisord and services
