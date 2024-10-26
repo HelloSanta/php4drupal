@@ -87,6 +87,10 @@ RUN useradd -ms /bin/bash myuser
 # Install Composer In order to use compose
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
 # Set the PATH to include ./vendor/bin
 ENV PATH="./vendor/bin:${PATH}"
 
