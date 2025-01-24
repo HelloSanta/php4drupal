@@ -25,6 +25,10 @@ build:
     - docker pull $CI_REGISTRY_IMAGE:$DOCKER_TAG || true
     - docker build --cache-from $CI_REGISTRY_IMAGE:$DOCKER_TAG --tag $CI_REGISTRY_IMAGE:$DOCKER_TAG .
     - docker push $CI_REGISTRY_IMAGE:$DOCKER_TAG
+  only:
+    refs:
+      - master
+
 
 push:
   stage: push
@@ -42,6 +46,9 @@ push:
     - git remote set-url --push origin git@github.com:HelloSanta/php4drupal.git
     - git remote show origin
     - git push --follow-tags origin HEAD:$CI_COMMIT_REF_NAME
+  only:
+    refs:
+      - master
 
 Mattermost:
   image: curlimages/curl:latest
