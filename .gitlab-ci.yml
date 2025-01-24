@@ -27,7 +27,7 @@ build:
     - docker push $CI_REGISTRY_IMAGE:$DOCKER_TAG
   only:
     refs:
-      - $DOCKER_TAG
+      - php8.2-apache
 
 push:
   stage: push
@@ -47,7 +47,7 @@ push:
     - git push --follow-tags origin HEAD:$CI_COMMIT_REF_NAME
   only:
     refs:
-      - $DOCKER_TAG
+      - php8.2-apache
 
 Mattermost:
   image: curlimages/curl:latest
