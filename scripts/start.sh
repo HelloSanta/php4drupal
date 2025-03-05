@@ -62,6 +62,7 @@ if [ ! -e "$FLAG_FILE" ]; then
     groupmod -g "$HELLOSANTA_GID" myuser
   fi
 
+  git config --global --add safe.directory /var/www/html
   touch $FLAG_FILE
 fi
 
