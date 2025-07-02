@@ -16,6 +16,7 @@ RUN set -eux; \
 		libjpeg-dev \
 		libpng-dev \
 		libwebp-dev \
+		libavif-dev \
 		libxpm-dev \
 		libpq-dev \
 		libzip-dev \
@@ -28,6 +29,7 @@ RUN set -eux; \
 		--with-jpeg=/usr \
 		--with-webp=/usr \
 		--with-xpm=/usr \
+		--with-avif \
 	; \
 	\
 	docker-php-ext-install -j "$(nproc)" \
