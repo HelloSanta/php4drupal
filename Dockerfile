@@ -1,57 +1,59 @@
-FROM php:8.2-apache-buster
+FROM php:8.2-apache-bullseye
 
 # install the PHP extensions we need
 RUN set -eux; \
 	\
 	if command -v a2enmod; then \
-		a2enmod rewrite; \
+	a2enmod rewrite; \
+	a2enmod headers; \
+	a2enmod expires; \
 	fi; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		libfreetype6-dev \
-		libjpeg62-turbo-dev \
-		libjpeg-dev \
-		libpng-dev \
-		libwebp-dev \
-		libxpm-dev \
-		libpq-dev \
-		libzip-dev \
-		libsodium-dev \
-		libldap2-dev \
+	libfreetype6-dev \
+	libjpeg62-turbo-dev \
+	libjpeg-dev \
+	libpng-dev \
+	libwebp-dev \
+	libxpm-dev \
+	libpq-dev \
+	libzip-dev \
+	libsodium-dev \
+	libldap2-dev \
 	; \
 	\
 	docker-php-ext-configure gd \
-		--with-freetype \
-		--with-jpeg=/usr \
-		--with-webp=/usr \
-		--with-xpm=/usr \
+	--with-freetype \
+	--with-jpeg=/usr \
+	--with-webp=/usr \
+	--with-xpm=/usr \
 	; \
 	\
 	docker-php-ext-install -j "$(nproc)" \
-		gd \
-		opcache \
-		pdo_mysql \
-		pdo_pgsql \
-		zip \
-		bcmath \
-		exif \
-		sodium \
-		ldap \
+	gd \
+	opcache \
+	pdo_mysql \
+	pdo_pgsql \
+	zip \
+	bcmath \
+	exif \
+	sodium \
+	ldap \
 	; \
 	\
-# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-		| awk '/=>/ { print $3 }' \
-		| sort -u \
-		| xargs -r dpkg-query -S \
-		| cut -d: -f1 \
-		| sort -u \
-		| xargs -rt apt-mark manual; \
+	| awk '/=>/ { print $3 }' \
+	| sort -u \
+	| xargs -r dpkg-query -S \
+	| cut -d: -f1 \
+	| sort -u \
+	| xargs -rt apt-mark manual; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*
@@ -72,8 +74,8 @@ RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.in
 
 # Install Memcached for php 8
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-		&& pecl install memcached \
-		&& docker-php-ext-enable memcached
+	&& pecl install memcached \
+	&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
@@ -89,7 +91,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
 # Install Node.js and npm
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
+	&& apt-get install -y nodejs
 
 # Set the PATH to include ./vendor/bin
 ENV PATH="./vendor/bin:${PATH}"
