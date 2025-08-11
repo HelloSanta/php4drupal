@@ -9,11 +9,8 @@ RUN set -eux; \
         a2enmod expires; \
     fi; \
     \
-    savedAptMark="$(apt-mark showmanual)"; \
-    \
-    apt-get update; \
-    # Install build dependencies for standard extensions
-    apt-get install -y --no-install-recommends \
+    # We will keep a list of build packages to remove them later
+    buildDeps=" \
         pkg-config \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
@@ -27,7 +24,26 @@ RUN set -eux; \
         libsodium-dev \
         libldap2-dev \
         libxml2-dev \
-    ; \
+        # These are dependencies of the above -dev packages
+        icu-devtools \
+        libbrotli-dev \
+        libfreetype-dev \
+        libicu-dev \
+        libldap-dev \
+        libssl-dev \
+        libx11-dev \
+        libxau-dev \
+        libxcb1-dev \
+        libxdmcp-dev \
+        libpthread-stubs0-dev \
+        x11proto-dev \
+        xtrans-dev \
+        zlib1g-dev \
+    "; \
+    \
+    apt-get update; \
+    # Install build dependencies for standard extensions
+    apt-get install -y --no-install-recommends $buildDeps; \
     \
     # Configure and install standard extensions
     docker-php-ext-configure gd \
@@ -50,29 +66,7 @@ RUN set -eux; \
         soap \
     ; \
     \
-    # Now, clean up the build dependencies for the extensions above
-    apt-mark auto '.*' > /dev/null; \
-    apt-mark manual $savedAptMark; \
-    \
-    apt-mark manual \
-        libavif15 \
-        libbsd0 \
-        libfreetype6 \
-        libjpeg62-turbo \
-        libldap-2.5-0 \
-        libpng16-16 \
-        libpq5 \
-        libsodium23 \
-        libwebp7 \
-        libx11-6 \
-        libxau6 \
-        libxcb1 \
-        libxdmcp6 \
-        libxpm4 \
-        libzip4 \
-    ; \
-    \
-    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    apt-get purge -y --auto-remove $buildDeps; \
     rm -rf /var/lib/apt/lists/*
 
 # set recommended PHP.ini settings
