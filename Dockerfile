@@ -1,10 +1,12 @@
-FROM php:8.4-apache-bullseye
+FROM php:8.4-apache-bookworm
 
 # install the PHP extensions we need
 RUN set -eux; \
 	\
 	if command -v a2enmod; then \
 		a2enmod rewrite; \
+		a2enmod headers; \
+		a2enmod expires; \
 	fi; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
@@ -22,6 +24,7 @@ RUN set -eux; \
 		libzip-dev \
 		libsodium-dev \
 		libldap2-dev \
+		libxml2-dev \
 	; \
 	\
 	docker-php-ext-configure gd \
@@ -42,6 +45,7 @@ RUN set -eux; \
 		exif \
 		sodium \
 		ldap \
+		soap \
 	; \
 	\
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
@@ -90,7 +94,7 @@ RUN useradd -ms /bin/bash myuser
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
 
 # Install Node.js and npm
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs
 
 # Set the PATH to include ./vendor/bin
