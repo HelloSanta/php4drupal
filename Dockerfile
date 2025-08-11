@@ -41,9 +41,24 @@ RUN set -eux; \
         zlib1g-dev \
     "; \
     \
+    # Keep runtime dependencies that extensions need
+    runtimeDeps=" \
+        libpng16-16 \
+        libpq5 \
+        libzip4 \
+        libfreetype6 \
+        libjpeg62-turbo \
+        libwebp7 \
+        libavif15 \
+        libxpm4 \
+        libldap-2.5-0 \
+        libxml2 \
+        libicu72 \
+    "; \
+    \
     apt-get update; \
     # Install build dependencies for standard extensions
-    apt-get install -y --no-install-recommends $buildDeps; \
+    apt-get install -y --no-install-recommends $buildDeps $runtimeDeps; \
     \
     # Configure and install standard extensions
     docker-php-ext-configure gd \
@@ -66,6 +81,7 @@ RUN set -eux; \
         soap \
     ; \
     \
+    # Only purge build dependencies, keep runtime ones
     apt-get purge -y --auto-remove $buildDeps; \
     rm -rf /var/lib/apt/lists/*
 
@@ -89,10 +105,14 @@ RUN set -eux; \
         pkg-config \
         libmemcached-dev \
         zlib1g-dev \
+        libmemcached11 \
+        libhashkit2 \
     ; \
-    pecl install memcached; \
+    # Use printf to provide answers to PECL configure prompts
+    # This answers: libmemcached dir, zlib dir, system fastlz, igbinary, msgpack, json, server protocol, sasl, sessions
+    printf "\n\n\n\n\n\n\n\n\n" | pecl install memcached; \
     docker-php-ext-enable memcached; \
-    # Clean up the dependencies for this block specifically
+    # Clean up only the dev dependencies, keep runtime ones
     apt-get purge -y --auto-remove pkg-config libmemcached-dev zlib1g-dev; \
     rm -rf /var/lib/apt/lists/*
 
