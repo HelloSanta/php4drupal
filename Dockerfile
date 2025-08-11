@@ -1,122 +1,85 @@
-FROM php:8.4-apache-bookworm
+FROM php:8.4-apache-bullseye
 
 # install the PHP extensions we need
 RUN set -eux; \
-    \
-    if command -v a2enmod; then \
-        a2enmod rewrite; \
-        a2enmod headers; \
-        a2enmod expires; \
-    fi; \
-    \
-    # We will keep a list of build packages to remove them later
-    buildDeps=" \
-        pkg-config \
-        libfreetype6-dev \
-        libjpeg62-turbo-dev \
-        libjpeg-dev \
-        libpng-dev \
-        libwebp-dev \
-        libavif-dev \
-        libxpm-dev \
-        libpq-dev \
-        libzip-dev \
-        libsodium-dev \
-        libldap2-dev \
-        libxml2-dev \
-        # These are dependencies of the above -dev packages
-        icu-devtools \
-        libbrotli-dev \
-        libfreetype-dev \
-        libicu-dev \
-        libldap-dev \
-        libssl-dev \
-        libx11-dev \
-        libxau-dev \
-        libxcb1-dev \
-        libxdmcp-dev \
-        libpthread-stubs0-dev \
-        x11proto-dev \
-        xtrans-dev \
-        zlib1g-dev \
-    "; \
-    \
-    # Keep runtime dependencies that extensions need
-    runtimeDeps=" \
-        libpng16-16 \
-        libpq5 \
-        libzip4 \
-        libfreetype6 \
-        libjpeg62-turbo \
-        libwebp7 \
-        libavif15 \
-        libxpm4 \
-        libldap-2.5-0 \
-        libxml2 \
-        libicu72 \
-    "; \
-    \
-    apt-get update; \
-    # Install build dependencies for standard extensions
-    apt-get install -y --no-install-recommends $buildDeps $runtimeDeps; \
-    \
-    # Configure and install standard extensions
-    docker-php-ext-configure gd \
-        --with-freetype \
-        --with-jpeg=/usr \
-        --with-webp=/usr \
-        --with-xpm=/usr \
-        --with-avif \
-    ; \
-    docker-php-ext-install -j "$(nproc)" \
-        gd \
-        opcache \
-        pdo_mysql \
-        pdo_pgsql \
-        zip \
-        bcmath \
-        exif \
-        sodium \
-        ldap \
-        soap \
-        intl \
-    ; \
-    \
-    # Only purge build dependencies, keep runtime ones
-    apt-get purge -y --auto-remove $buildDeps; \
-    rm -rf /var/lib/apt/lists/*
+	\
+	if command -v a2enmod; then \
+		a2enmod rewrite; \
+		a2enmod headers; \
+		a2enmod expires; \
+	fi; \
+	\
+	savedAptMark="$(apt-mark showmanual)"; \
+	\
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		libfreetype6-dev \
+		libjpeg62-turbo-dev \
+		libjpeg-dev \
+		libpng-dev \
+		libwebp-dev \
+		libavif-dev \
+		libxpm-dev \
+		libpq-dev \
+		libzip-dev \
+		libsodium-dev \
+		libldap2-dev \
+		libxml2-dev \
+	; \
+	\
+	docker-php-ext-configure gd \
+		--with-freetype \
+		--with-jpeg=/usr \
+		--with-webp=/usr \
+		--with-xpm=/usr \
+		--with-avif \
+	; \
+	\
+	docker-php-ext-install -j "$(nproc)" \
+		gd \
+		opcache \
+		pdo_mysql \
+		pdo_pgsql \
+		zip \
+		bcmath \
+		exif \
+		sodium \
+		ldap \
+		soap \
+	; \
+	\
+# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark; \
+	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+		| awk '/=>/ { print $3 }' \
+		| sort -u \
+		| xargs -r dpkg-query -S \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -rt apt-mark manual; \
+	\
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*
 
-# set recommended PHP.ini settings for Drupal
+# set recommended PHP.ini settings
+# see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
-    echo 'opcache.memory_consumption=256'; \
-    echo 'opcache.interned_strings_buffer=16'; \
-    echo 'opcache.max_accelerated_files=10000'; \
-    echo 'opcache.revalidate_freq=60'; \
-    echo 'opcache.fast_shutdown=1'; \
-    } > /usr/local/etc/php/conf.d/opcache-recommended.ini
+	echo 'opcache.memory_consumption=128'; \
+	echo 'opcache.interned_strings_buffer=8'; \
+	echo 'opcache.max_accelerated_files=4000'; \
+	echo 'opcache.revalidate_freq=60'; \
+	echo 'opcache.fast_shutdown=1'; \
+	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # Enable output_buffering
 RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.ini
 
-# Install Memcached + Redis for Drupal caching
-RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-        pkg-config \
-		libssl-dev \
-        libmemcached-dev \
-        zlib1g-dev \
-        libmemcached11 \
-        libhashkit2 \
-    ; \
-    # Install memcached extension with explicit configuration
-    printf "/usr\n\n\n\n\n\n\n\n\n" | pecl install memcached; \
-    # Install redis extension
-    printf "\n\n\n\n\n\n\n\n\n" | pecl install redis; \
-    docker-php-ext-enable memcached redis; \
-    # Clean up only the dev dependencies, keep runtime ones
-    apt-get purge -y --auto-remove pkg-config libmemcached-dev zlib1g-dev; \
-    rm -rf /var/lib/apt/lists/*
+
+# Install Memcached for php 8
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+		&& pecl install memcached \
+		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
