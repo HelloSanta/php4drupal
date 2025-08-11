@@ -78,7 +78,7 @@ RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.in
 
 
 # Install Memcached for php 8
-RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+RUN apt-get update && apt-get install -y pkg-config libmemcached-dev zlib1g-dev \
 		&& pecl install memcached \
 		&& docker-php-ext-enable memcached
 
