@@ -79,18 +79,18 @@ RUN set -eux; \
         sodium \
         ldap \
         soap \
+        intl \
     ; \
     \
     # Only purge build dependencies, keep runtime ones
     apt-get purge -y --auto-remove $buildDeps; \
     rm -rf /var/lib/apt/lists/*
 
-# set recommended PHP.ini settings
-# see https://secure.php.net/manual/en/opcache.installation.php
+# set recommended PHP.ini settings for Drupal
 RUN { \
-    echo 'opcache.memory_consumption=128'; \
-    echo 'opcache.interned_strings_buffer=8'; \
-    echo 'opcache.max_accelerated_files=4000'; \
+    echo 'opcache.memory_consumption=256'; \
+    echo 'opcache.interned_strings_buffer=16'; \
+    echo 'opcache.max_accelerated_files=10000'; \
     echo 'opcache.revalidate_freq=60'; \
     echo 'opcache.fast_shutdown=1'; \
     } > /usr/local/etc/php/conf.d/opcache-recommended.ini
@@ -98,7 +98,7 @@ RUN { \
 # Enable output_buffering
 RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.ini
 
-# Install Memcached in a self-contained block
+# Install Memcached + Redis for Drupal caching
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -108,10 +108,11 @@ RUN set -eux; \
         libmemcached11 \
         libhashkit2 \
     ; \
-    # Use printf to provide answers to PECL configure prompts
-    # This answers: libmemcached dir, zlib dir, system fastlz, igbinary, msgpack, json, server protocol, sasl, sessions
-    printf "\n\n\n\n\n\n\n\n\n" | pecl install memcached; \
-    docker-php-ext-enable memcached; \
+    # Install memcached extension with explicit configuration
+    printf "/usr\n\n\n\n\n\n\n\n\n" | pecl install memcached; \
+    # Install redis extension
+    printf "\n\n\n\n\n\n\n\n\n" | pecl install redis; \
+    docker-php-ext-enable memcached redis; \
     # Clean up only the dev dependencies, keep runtime ones
     apt-get purge -y --auto-remove pkg-config libmemcached-dev zlib1g-dev; \
     rm -rf /var/lib/apt/lists/*
