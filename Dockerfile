@@ -53,13 +53,24 @@ RUN set -eux; \
     # Now, clean up the build dependencies for the extensions above
     apt-mark auto '.*' > /dev/null; \
     apt-mark manual $savedAptMark; \
-    ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-        | awk '/=>/ { print $3 }' \
-        | sort -u \
-        | xargs -r dpkg-query -S \
-        | cut -d: -f1 \
-        | sort -u \
-        | xargs -rt apt-mark manual; \
+    \
+    apt-mark manual \
+        libavif15 \
+        libbsd0 \
+        libfreetype6 \
+        libjpeg62-turbo \
+        libldap-2.5-0 \
+        libpng16-16 \
+        libpq5 \
+        libsodium23 \
+        libwebp7 \
+        libx11-6 \
+        libxau6 \
+        libxcb1 \
+        libxdmcp6 \
+        libxpm4 \
+        libzip4 \
+    ; \
     \
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
     rm -rf /var/lib/apt/lists/*
