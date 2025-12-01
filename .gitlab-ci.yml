@@ -1,5 +1,10 @@
 image: docker:20.10.16
 
+include:
+  - project: 'hellosanta/standards'
+    ref: 2.x
+    file: '/ci-templates/jobs/notifiation_mattermost.yml'
+
 services:
   - docker:20.10.16-dind
 
@@ -50,15 +55,11 @@ push:
       - php8.2-apache
 
 Mattermost:
-  image: curlimages/curl:latest
+  extends: .mattermost
   stage: notify
-  before_script: []
   variables:
     PAYLOAD: '{
       "text": "* 執行狀態: `錯誤`\n* 專案名稱: $CI_PROJECT_NAME\n* 專案分支: $CI_COMMIT_BRANCH\n* 專案作者: @$GITLAB_USER_LOGIN\n* Message: $CI_COMMIT_MESSAGE\n* 查看連結: $CI_PIPELINE_URL",
       "channel": "docker-build-automation",
       "username": "Docker自動部署小幫手"}'
-  script:
-    - echo $PAYLOAD
-    - curl -i -X POST --data-urlencode payload="$PAYLOAD" $mattermost_url
   when: on_failure
