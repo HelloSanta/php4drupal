@@ -1,5 +1,18 @@
 FROM php:8.3-apache-bullseye
 
+# Upgrade Apache (and bundled libs) to the latest version available in the
+# configured apt repositories at build time. Keeps us on bullseye but ensures
+# every freshly built image picks up the newest security/bugfix release.
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --only-upgrade --no-install-recommends \
+		apache2 \
+		apache2-bin \
+		apache2-data \
+		apache2-utils \
+	; \
+	rm -rf /var/lib/apt/lists/*
+
 # install the PHP extensions we need
 RUN set -eux; \
 	\
