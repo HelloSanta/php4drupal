@@ -1,4 +1,4 @@
-FROM php:8.3-apache-bullseye
+FROM php:8.3-apache-bookworm
 
 # Upgrade Apache (and bundled libs) to the latest version available in the
 # configured apt repositories at build time. Keeps us on bullseye but ensures
@@ -63,6 +63,8 @@ RUN set -eux; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 		| awk '/=>/ { print $3 }' \
 		| sort -u \
+		| xargs -r readlink -f \
+		| sort -u \
 		| xargs -r dpkg-query -S \
 		| cut -d: -f1 \
 		| sort -u \
@@ -85,9 +87,13 @@ RUN { \
 RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.ini
 
 
-# Install Memcached for php 8
-RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-		&& pecl install memcached \
+# Install Memcached for php 8.
+# pecl prompts on bookworm default `libmemcached directory` to `[no]` when
+# stdin is closed, which makes configure abort. Feed `/usr` for that prompt
+# and accept defaults (empty newlines) for the remaining 8 prompts:
+# zlib, fastlz, igbinary, msgpack, json, protocol, sasl, sessions.
+RUN apt-get update && apt-get install -y libmemcached-dev libssl-dev zlib1g-dev \
+		&& printf '/usr\n\n\n\n\n\n\n\n\n' | pecl install memcached \
 		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip
