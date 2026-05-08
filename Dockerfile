@@ -1,8 +1,8 @@
-FROM php:8.3-apache-bookworm
+FROM php:8.3-apache-trixie
 
 # Upgrade Apache (and bundled libs) to the latest version available in the
-# configured apt repositories at build time. Keeps us on bullseye but ensures
-# every freshly built image picks up the newest security/bugfix release.
+# configured apt repositories at build time. Ensures every freshly built image
+# picks up the newest security/bugfix release on top of the base image.
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --only-upgrade --no-install-recommends \
