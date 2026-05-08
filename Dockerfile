@@ -1,4 +1,17 @@
-FROM php:8.4-apache-bullseye
+FROM php:8.4-apache-trixie
+
+# Upgrade Apache (and bundled libs) to the latest version available in the
+# configured apt repositories at build time. Ensures every freshly built image
+# picks up the newest security/bugfix release on top of the base image.
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --only-upgrade --no-install-recommends \
+		apache2 \
+		apache2-bin \
+		apache2-data \
+		apache2-utils \
+	; \
+	rm -rf /var/lib/apt/lists/*
 
 # install the PHP extensions we need
 RUN set -eux; \
@@ -54,6 +67,8 @@ RUN set -eux; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 		| awk '/=>/ { print $3 }' \
 		| sort -u \
+		| xargs -r readlink -f \
+		| sort -u \
 		| xargs -r dpkg-query -S \
 		| cut -d: -f1 \
 		| sort -u \
@@ -76,9 +91,15 @@ RUN { \
 RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.ini
 
 
-# Install Memcached for php 8
-RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-		&& pecl install memcached \
+# Install Memcached for php 8.
+# pecl prompts on trixie default `libmemcached directory` to `[no]` when stdin
+# is closed, which makes configure abort. Feed `/usr` for that prompt and
+# accept defaults (empty newlines) for the remaining 8 prompts: zlib, fastlz,
+# igbinary, msgpack, json, protocol, sasl, sessions.
+# libssl-dev is required because libmemcached.pc declares Requires: libcrypto
+# and pkg-config breaks resolving libmemcached without it.
+RUN apt-get update && apt-get install -y libmemcached-dev libssl-dev zlib1g-dev \
+		&& printf '/usr\n\n\n\n\n\n\n\n\n' | pecl install memcached \
 		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip
