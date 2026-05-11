@@ -109,15 +109,27 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzi
 RUN apt-get install -y rsync default-mysql-client
 
 # Disable SSL by default for the bundled MariaDB client.
+#
 # Trixie's default-mysql-client is MariaDB 11.8+, whose mysql / mysqldump enable
 # `--ssl-verify-server-cert` and TLS-PREFERRED by default. Every Hello Santa
 # Drupal stack runs an internal MySQL / Percona server without an SSL listener,
 # so the new default breaks `drush sql-dump`, `mysqldump` backups, and any CI
 # `Backup Process` job with "TLS/SSL error: SSL is required, but the server
-# does not support it". Drop a system-wide client config so all invocations
-# start with ssl off; individual call sites can still re-enable per-invocation
-# via `--ssl=1` if a future server gains TLS support.
-RUN printf '[client]\nssl=0\n' > /etc/mysql/conf.d/disable-ssl.cnf
+# does not support it".
+#
+# A simple `/etc/mysql/conf.d/disable-ssl.cnf` is NOT enough — drush invokes
+# `mysqldump --defaults-file=/tmp/drush_XXX` which explicitly bypasses all
+# system config files. The only universal fix is to wrap the binaries so the
+# `--ssl=0` flag is appended unconditionally. Appended (not prepended) because
+# `mariadb-dump` requires `--defaults-file` as the very first arg.
+RUN set -eux; \
+	for bin in mysqldump mysql; do \
+		real="/usr/bin/${bin}.upstream"; \
+		mv "/usr/bin/${bin}" "${real}"; \
+		printf '#!/bin/sh\nexec %s "$@" --ssl=0\n' "${real}" > "/usr/bin/${bin}"; \
+		chmod +x "/usr/bin/${bin}"; \
+	done; \
+	printf '[client]\nssl=0\n' > /etc/mysql/conf.d/disable-ssl.cnf
 
 # Add a non-root user for apache server user
 RUN useradd -ms /bin/bash myuser
