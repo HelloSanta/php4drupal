@@ -102,6 +102,17 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzi
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
 
+# Disable SSL by default for the bundled MariaDB client.
+# Trixie's default-mysql-client is MariaDB 11.8+, whose mysql / mysqldump enable
+# `--ssl-verify-server-cert` and TLS-PREFERRED by default. Every Hello Santa
+# Drupal stack runs an internal MySQL / Percona server without an SSL listener,
+# so the new default breaks `drush sql-dump`, `mysqldump` backups, and any CI
+# `Backup Process` job with "TLS/SSL error: SSL is required, but the server
+# does not support it". Drop a system-wide client config so all invocations
+# start with ssl off; individual call sites can still re-enable per-invocation
+# via `--ssl=1` if a future server gains TLS support.
+RUN printf '[client]\nssl=0\n' > /etc/mysql/conf.d/disable-ssl.cnf
+
 # Add a non-root user for apache server user
 RUN useradd -ms /bin/bash myuser
 
