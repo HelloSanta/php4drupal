@@ -135,7 +135,9 @@ RUN set -eux; \
 RUN useradd -ms /bin/bash myuser
 
 # Install Composer In order to use compose
-COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
+# CVE-2026-45793 fixed in Composer 2.9.8 (May 2026). Pinning to 2.9 minor
+# auto-tracks security patches without risking 3.x major bumps.
+COPY --from=composer:2.9 /usr/bin/composer /usr/local/bin/
 
 # Install Node.js and npm
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
