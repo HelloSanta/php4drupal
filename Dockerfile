@@ -122,8 +122,17 @@ RUN apt-get install -y rsync default-mysql-client
 # system config files. The only universal fix is to wrap the binaries so the
 # `--ssl=0` flag is appended unconditionally. Appended (not prepended) because
 # `mariadb-dump` requires `--defaults-file` as the very first arg.
+#
+# Trixie's `default-mysql-client` is MariaDB 11.8+, which ships the canonical
+# binaries as `mariadb` / `mariadb-dump` while `mysql` / `mysqldump` are kept
+# only as compatibility symlinks. Drush 13 on Trixie picks the `mariadb*`
+# names first (verified via the error trace
+# `The command "mariadb --defaults-file=/tmp/drush_xxx ..."`), so wrapping
+# only `mysql`/`mysqldump` leaves real `mariadb`/`mariadb-dump` exposed and
+# defeats the fix when targeting a server with TLS + self-signed cert (e.g.
+# MySQL 8.4 default). Wrap all four binaries.
 RUN set -eux; \
-	for bin in mysqldump mysql; do \
+	for bin in mysqldump mysql mariadb-dump mariadb; do \
 		real="/usr/bin/${bin}.upstream"; \
 		mv "/usr/bin/${bin}" "${real}"; \
 		printf '#!/bin/sh\nexec %s "$@" --ssl=0\n' "${real}" > "/usr/bin/${bin}"; \
