@@ -1,9 +1,24 @@
 FROM php:8.4-apache-trixie
 
-# Upgrade Apache (and bundled libs) to the latest version available in the
-# configured apt repositories at build time. Ensures every freshly built image
-# picks up the newest security/bugfix release on top of the base image.
+# Upgrade Apache to the newest packaged build available for Debian 13 (trixie),
+# pulling apache2 from trixie-proposed-updates when it carries a higher version
+# than trixie / trixie-security.
+#
+# CVE-2026-49975 (mod_http2 HTTP/2 Bomb) is already fixed in trixie-security's
+# 2.4.67-1~deb13u3 via DSA-6323-1 — but that is a backport that keeps the
+# 2.4.67 version string. Vulnerability scanners that match on version string
+# alone still flag 2.4.67 and demand apache2 >= 2.4.68, so we ship the real
+# 2.4.68-1~deb13u1 Debian build that is staged in trixie-proposed-updates for
+# the next trixie point release.
+#
+# The proposed-updates source is added only for this layer and removed before
+# the layer ends, so no later apt layer sees it. No exact version is pinned:
+# apt picks the highest available apache2 (priority 500), so this keeps working
+# once 2.4.68 reaches trixie proper, and falls back to security's build if
+# proposed-updates ever lacks apache2.
 RUN set -eux; \
+	echo 'deb http://deb.debian.org/debian trixie-proposed-updates main' \
+		> /etc/apt/sources.list.d/proposed-updates.list; \
 	apt-get update; \
 	apt-get install -y --only-upgrade --no-install-recommends \
 		apache2 \
@@ -11,6 +26,7 @@ RUN set -eux; \
 		apache2-data \
 		apache2-utils \
 	; \
+	rm -f /etc/apt/sources.list.d/proposed-updates.list; \
 	rm -rf /var/lib/apt/lists/*
 
 # install the PHP extensions we need
