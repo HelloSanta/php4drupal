@@ -29,6 +29,17 @@ RUN set -eux; \
 	rm -f /etc/apt/sources.list.d/proposed-updates.list; \
 	rm -rf /var/lib/apt/lists/*
 
+# Upgrade OpenSSL to the trixie-security build (3.5.7-1~deb13u2, DSA-6465-1:
+# CVE-2026-18798 / CVE-2026-63072 / CVE-2026-63076). No version pin, so every
+# rebuild keeps tracking the newest security build from the default sources.
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --only-upgrade --no-install-recommends \
+		libssl3t64 \
+		openssl \
+	; \
+	rm -rf /var/lib/apt/lists/*
+
 # install the PHP extensions we need
 RUN set -eux; \
 	\
