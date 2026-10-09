@@ -104,7 +104,7 @@ RUN set -eux; \
 # see https://secure.php.net/manual/en/opcache.installation.php
 RUN { \
 	echo 'opcache.memory_consumption=128'; \
-	echo 'opcache.interned_strings_buffer=8'; \
+	echo 'opcache.interned_strings_buffer=16'; \
 	echo 'opcache.max_accelerated_files=4000'; \
 	echo 'opcache.revalidate_freq=60'; \
 	echo 'opcache.fast_shutdown=1'; \
@@ -122,6 +122,12 @@ RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.in
 RUN apt-get update && apt-get install -y libmemcached-dev libssl-dev zlib1g-dev \
 		&& printf '/usr\n\n\n\n\n\n\n\n\n' | pecl install memcached \
 		&& docker-php-ext-enable memcached
+
+# APCu：Drupal core 偵測到 APCu 就會把 bootstrap、config、discovery 快取放在 APCu（ChainedFastBackend），
+# 每個請求少查很多次資料庫。沒有它的話這些快取全部走 MySQL（2026-10-10 量到 gogriffins 9 天查了 179 萬次 cache_config）。
+RUN printf '\n' | pecl install apcu \
+		&& docker-php-ext-enable apcu \
+		&& { echo 'apc.shm_size=64M'; echo 'apc.enable_cli=0'; } > /usr/local/etc/php/conf.d/apcu.ini
 
 # Install openssh && nano && supervisor && git && unzip
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
