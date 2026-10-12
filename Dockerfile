@@ -1,5 +1,18 @@
 FROM php:7.4-apache-bullseye
 
+# Debian bullseye 已經 EOL，deb.debian.org／security.debian.org 不再提供它的套件
+# （索引還在但套件檔 404，或整個 suite 已經下架），所以套件來源一律改指 archive.debian.org。
+# archive 的 Release 檔已經過了 Valid-Until，要關掉期限檢查，apt-get update 才不會拒絕。
+RUN set -eux; \
+	sed -i \
+		-e 's#http://deb.debian.org/#http://archive.debian.org/#' \
+		-e 's#http://security.debian.org/#http://archive.debian.org/#' \
+		/etc/apt/sources.list; \
+	echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
+
+# mod_expires、mod_headers：Drupal 的 .htaccess 用它們給靜態檔加快取標頭，沒啟用的話瀏覽器每頁都重抓所有靜態檔。
+RUN a2enmod expires headers
+
 # 安裝 Sury 的 Apache 最新版本來源，解決 CVE-2024-38475/38476
 RUN apt-get update && apt-get install -y apt-transport-https curl lsb-release ca-certificates gnupg && \
 	curl -fsSL https://packages.sury.org/apache2/apt.gpg | gpg --dearmor -o /usr/share/keyrings/sury-archive-keyring.gpg && \
@@ -40,7 +53,7 @@ RUN set -eux; \
 	zip \
 	bcmath \
 	; \
-	pecl install imagick && docker-php-ext-enable imagick; \
+	pecl install imagick-3.8.0 && docker-php-ext-enable imagick; \
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
@@ -64,7 +77,7 @@ RUN { \
 
 # 安裝 Memcached 支援
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-	&& pecl install memcached \
+	&& pecl install memcached-3.3.0 \
 	&& docker-php-ext-enable memcached \
 	&& rm -rf /var/lib/apt/lists/*
 
