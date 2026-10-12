@@ -1,5 +1,15 @@
 FROM php:8.2-apache-bullseye
 
+# Debian bullseye 已經 EOL，deb.debian.org／security.debian.org 不再提供它的套件
+# （索引還在但套件檔 404，或整個 suite 已經下架），所以套件來源一律改指 archive.debian.org。
+# archive 的 Release 檔已經過了 Valid-Until，要關掉期限檢查，apt-get update 才不會拒絕。
+RUN set -eux; \
+	sed -i \
+		-e 's#http://deb.debian.org/#http://archive.debian.org/#' \
+		-e 's#http://security.debian.org/#http://archive.debian.org/#' \
+		/etc/apt/sources.list; \
+	echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
+
 # install the PHP extensions we need
 RUN set -eux; \
 	\
@@ -74,7 +84,7 @@ RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.in
 
 # Install Memcached for php 8
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-	&& pecl install memcached \
+	&& pecl install memcached-3.3.0 \
 	&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip

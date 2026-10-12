@@ -27,8 +27,10 @@ before_script:
 build:
   stage: build
   script:
-    - docker pull $CI_REGISTRY_IMAGE:$DOCKER_TAG || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:$DOCKER_TAG --tag $CI_REGISTRY_IMAGE:$DOCKER_TAG .
+    # --no-cache：舊 Debian 的套件來源下架後，用 --cache-from 建置時每一層都命中快取，
+    # 排程建置看起來一直成功，其實已經不能從頭建（php7.4、8.1 就是這樣沒被發現）。
+    # 每次從頭建，來源出問題時排程建置會直接失敗。
+    - docker build --pull --no-cache --tag $CI_REGISTRY_IMAGE:$DOCKER_TAG .
     - docker push $CI_REGISTRY_IMAGE:$DOCKER_TAG
   only:
     refs:
