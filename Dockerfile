@@ -1,5 +1,28 @@
 FROM php:7.0-apache
 
+# stretch 自己的簽章金鑰已經過期（apt 回 EXPKEYSIG）。archive.debian.org 上 stretch 的 Release
+# 另外有新一代的金鑰簽名，把對應的公鑰放進來就能驗證：
+# - stretch：Debian Archive Automatic Signing Key (11/bullseye)
+#   1F89983E0081FDE018F3CC9673A4F27B8DD47936，2029-01-15 到期
+# - stretch/updates：Debian Security Archive Automatic Signing Key (10/buster)
+#   5E61B217265DA9807A23C5FF4DFAB270CAA96DFA，2027-04-12 到期，到期後 stretch 就又建不起來
+# 兩把都取自 debian-archive-keyring 2023.3+deb12u2（後者在 debian-archive-removed-keys.gpg）。
+ADD conf/apt-keys/ /etc/apt/trusted.gpg.d/
+
+# Debian stretch 已經 EOL，deb.debian.org／security.debian.org 不再提供它的套件
+# （索引還在但套件檔 404，或整個 suite 已經下架），所以套件來源一律改指 archive.debian.org。
+# archive 的 Release 檔已經過了 Valid-Until，要關掉期限檢查，apt-get update 才不會拒絕。
+RUN set -eux; \
+	sed -i \
+		-e 's#http://deb.debian.org/#http://archive.debian.org/#' \
+		-e 's#http://security.debian.org/#http://archive.debian.org/#' \
+		/etc/apt/sources.list; \
+	sed -i '/stretch-updates/d' /etc/apt/sources.list; \
+	echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
+
+# mod_expires、mod_headers：Drupal 的 .htaccess 用它們給靜態檔加快取標頭，沒啟用的話瀏覽器每頁都重抓所有靜態檔。
+RUN a2enmod expires headers
+
 MAINTAINER victor.yang@hellosanta.com.tw
 
 RUN a2enmod rewrite
