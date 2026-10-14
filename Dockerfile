@@ -75,10 +75,14 @@ RUN set -eux; \
 		--with-avif \
 	; \
 	\
+# mysqli: Backup and Migrate connects to the database with mysqli. It was
+# added for B&M in 2018 (052903b) and dropped when the Dockerfile was
+# rewritten (c4af8a4).
 	docker-php-ext-install -j "$(nproc)" \
 		gd \
 		opcache \
 		pdo_mysql \
+		mysqli \
 		pdo_pgsql \
 		zip \
 		bcmath \
