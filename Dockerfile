@@ -1,5 +1,9 @@
 FROM php:8.4-apache-trixie
 
+# PHP2Shell (CVE-2026-109618 / CVE-2026-109619, TG-245): fail the build if the
+# official base image is older than the first fixed release.
+RUN php -r 'exit(version_compare(PHP_VERSION, "8.4.27", "<") ? 1 : 0);'
+
 # Upgrade Apache to the newest packaged build available for Debian 13 (trixie),
 # pulling apache2 from trixie-proposed-updates when it carries a higher version
 # than trixie / trixie-security.
