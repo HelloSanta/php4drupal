@@ -10,6 +10,48 @@ RUN set -eux; \
 		/etc/apt/sources.list; \
 	echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
 
+# PHP2Shell (CVE-2026-109618 / CVE-2026-109619, 2026-10-21, TG-245).
+# The official bullseye variant stopped at 8.2.29; 8.2.35 (the fixed release) is
+# only published on bookworm/trixie. This layer rebuilds PHP from the 8.2.35 source on
+# bullseye, so the OS stays the same.
+# Configure options are the ones the official image was built with (php-config),
+# minus --with-pear so the install does not download from pear.php.net (the image's
+# existing pear/pecl stay). /usr/src/php.tar.xz is repacked from the patched tree,
+# so extensions built later with docker-php-ext-install (opcache etc.) use it too.
+RUN set -eux; \
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends $PHPIZE_DEPS patch xz-utils ca-certificates curl \
+		apache2-dev libargon2-dev libcurl4-openssl-dev libonig-dev libreadline-dev \
+		libsodium-dev libsqlite3-dev libssl-dev libxml2-dev zlib1g-dev; \
+	curl -fsSL -o /usr/src/php.tar.xz "https://www.php.net/distributions/php-8.2.35.tar.xz"; \
+	echo "5737b98601fe5ab1b8c5db0c82ed3158acb9283ed3081ffe2faffb9ac81455e6 *php.tar.xz" | (cd /usr/src && sha256sum -c -); \
+	rm -f /usr/src/php.tar.xz.asc; \
+	export CFLAGS="$PHP_CFLAGS" CPPFLAGS="$PHP_CPPFLAGS" LDFLAGS="$PHP_LDFLAGS"; \
+	docker-php-source extract; \
+	cd /usr/src/php; \
+	opts="$(php-config --configure-options | sed -e 's/ --with-pear//' -e 's/ build_alias=[^ ]*//')"; \
+	eval "./configure $opts"; \
+	make -j "$(nproc)"; \
+	find -type f -name '*.a' -delete; \
+	make install; \
+	find /usr/local/bin /usr/local/sbin -type f -perm -0111 -exec sh -c 'file -b "$1" | grep -q ELF && strip --strip-all "$1"' _ '{}' ';'; \
+	make clean; \
+	rm -f .docker-extracted; \
+	cd /usr/src; \
+	rm -f php.tar.xz php.tar.xz.asc; \
+	tar -cJf php.tar.xz php; \
+	docker-php-source delete; \
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark > /dev/null; \
+	find /usr/local -type f -executable -exec ldd '{}' ';' 2> /dev/null \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
+		| sort -u | xargs -r dpkg-query --search | cut -d: -f1 | sort -u | xargs -r apt-mark manual > /dev/null; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*; \
+	php --version; \
+	php -r 'exit(PHP_VERSION === "8.2.35" ? 0 : 1);'
+
 # install the PHP extensions we need
 RUN set -eux; \
 	\
