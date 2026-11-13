@@ -124,7 +124,7 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 
 # 安裝 ssh, nano, supervisor, drush, git
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git \
-	&& php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.4.8/drush.phar');" > drush \
+	&& php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.5.0/drush.phar');" > drush \
 	&& chmod +x drush \
 	&& mv drush /usr/local/bin/drush \
 	&& drush init -y \
