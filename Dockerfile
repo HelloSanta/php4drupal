@@ -94,7 +94,7 @@ RUN set -eux; \
 	zip \
 	bcmath \
 	; \
-	pecl install imagick-3.8.0 && docker-php-ext-enable imagick; \
+	pecl install imagick-3.8.1 && docker-php-ext-enable imagick; \
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
