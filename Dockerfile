@@ -118,7 +118,7 @@ RUN { \
 
 # 安裝 Memcached 支援
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-	&& pecl install memcached-3.3.0 \
+	&& pecl install memcached-3.4.0 \
 	&& docker-php-ext-enable memcached \
 	&& rm -rf /var/lib/apt/lists/*
 
