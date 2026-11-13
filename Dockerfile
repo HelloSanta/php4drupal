@@ -121,7 +121,7 @@ RUN apt-get update && apt-get install -y \
 		&& docker-php-ext-enable imagick
 
 # Install openssh && nano && supervisor && drush && git
-RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.4.11/drush.phar');" > drush \
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git && php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.4.8/drush.phar');" > drush \
 	&& php drush core-status \
 	&& chmod +x drush \
 	&& mv drush /usr/local/bin \
