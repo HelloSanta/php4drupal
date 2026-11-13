@@ -94,7 +94,7 @@ RUN set -eux; \
 	zip \
 	bcmath \
 	; \
-	pecl install imagick-3.8.0 && docker-php-ext-enable imagick; \
+	pecl install imagick-3.8.1 && docker-php-ext-enable imagick; \
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
@@ -118,13 +118,13 @@ RUN { \
 
 # 安裝 Memcached 支援
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-	&& pecl install memcached-3.3.0 \
+	&& pecl install memcached-3.4.0 \
 	&& docker-php-ext-enable memcached \
 	&& rm -rf /var/lib/apt/lists/*
 
 # 安裝 ssh, nano, supervisor, drush, git
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git \
-	&& php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.4.8/drush.phar');" > drush \
+	&& php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.5.0/drush.phar');" > drush \
 	&& chmod +x drush \
 	&& mv drush /usr/local/bin/drush \
 	&& drush init -y \
