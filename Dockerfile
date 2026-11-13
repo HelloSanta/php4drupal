@@ -117,7 +117,7 @@ RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
 # Install php-imagick
 RUN apt-get update && apt-get install -y \
     libmagickwand-dev --no-install-recommends \
-    	&& pecl install imagick-3.7.0 \
+    	&& pecl install imagick-3.8.1 \
 		&& docker-php-ext-enable imagick
 
 # Install openssh && nano && supervisor && drush && git
