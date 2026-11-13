@@ -124,9 +124,9 @@ RUN { \
 RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.ini
 
 
-# Install Memcached for php 8
+# Install Memcached for php 8 (pinned; 3.4.0 is the latest pecl release, 2026-11)
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-	&& pecl install memcached-3.3.0 \
+	&& pecl install memcached-3.4.0 \
 	&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip
