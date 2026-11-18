@@ -105,7 +105,9 @@ RUN set -eux; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 		| awk '/=>/ { print $3 }' \
 		| sort -u \
-		| xargs -r dpkg-query -S | grep -v '^diversion ' \
+		| xargs -r readlink -f \
+		| sort -u \
+		| xargs -r dpkg-query -S \
 		| cut -d: -f1 \
 		| sort -u \
 		| xargs -rt apt-mark manual; \
