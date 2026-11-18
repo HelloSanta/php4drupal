@@ -1,19 +1,19 @@
-FROM php:8.1-apache-buster
+FROM php:8.1-apache-trixie
 
-# Debian buster 已經 EOL，deb.debian.org／security.debian.org 不再提供它的套件
-# （索引還在但套件檔 404，或整個 suite 已經下架），所以套件來源一律改指 archive.debian.org。
-# archive 的 Release 檔已經過了 Valid-Until，要關掉期限檢查，apt-get update 才不會拒絕。
+# TG-4887：base 從 buster（Apache 2.4.38、已 EOL）換成官方 php:8.1-apache 現在的 base（Debian 13 trixie）。
+# Apache 升到 trixie 安全來源的最新版（2.4.71-1~deb13u1 起）；不鎖版本，之後重建會跟著安全來源走。
 RUN set -eux; \
-	sed -i \
-		-e 's#http://deb.debian.org/#http://archive.debian.org/#' \
-		-e 's#http://security.debian.org/#http://archive.debian.org/#' \
-		/etc/apt/sources.list; \
-	echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
+	apt-get update; \
+	apt-get install -y --only-upgrade --no-install-recommends \
+		apache2 apache2-bin apache2-data apache2-utils libssl3t64 openssl; \
+	rm -rf /var/lib/apt/lists/*; \
+	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' apache2-bin)" ge '2.4.71'; \
+	apache2 -v
 
 # PHP2Shell (CVE-2026-109618 / CVE-2026-109619, 2026-10-21, TG-245).
-# The official php:8.1-apache-buster image stopped at 8.1.20. This layer rebuilds
-# PHP from the last 8.1 release (8.1.34) plus the PHP security team's source backport
-# (php-src branch PHP-8.1-CVE-2026-109618-109619), keeping Debian buster.
+# The official php:8.1-apache image is the unpatched 8.1.34. This layer rebuilds
+# PHP 8.1.34 plus the PHP security team's source backport
+# (php-src branch PHP-8.1-CVE-2026-109618-109619).
 # Configure options are the ones the official image was built with (php-config),
 # minus --with-pear so the install does not download from pear.php.net (the image's
 # existing pear/pecl stay). /usr/src/php.tar.xz is repacked from the patched tree,
@@ -48,7 +48,7 @@ RUN set -eux; \
 	apt-mark manual $savedAptMark > /dev/null; \
 	find /usr/local -type f -executable -exec ldd '{}' ';' 2> /dev/null \
 		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
-		| sort -u | xargs -r dpkg-query --search | cut -d: -f1 | sort -u | xargs -r apt-mark manual > /dev/null; \
+		| sort -u | xargs -r dpkg-query --search | awk -F: '!/^diversion / {print $1}' | sort -u | xargs -r apt-mark manual > /dev/null; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*; \
 	php --version; \
@@ -77,7 +77,7 @@ RUN set -eux; \
 		libpq-dev \
 		libzip-dev \
 		libsodium-dev \
-		libldap2-dev \
+		libldap-dev \
 	; \
 	\
 	docker-php-ext-configure gd \
@@ -105,6 +105,8 @@ RUN set -eux; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 		| awk '/=>/ { print $3 }' \
 		| sort -u \
+		| xargs -r readlink -f \
+		| sort -u \
 		| xargs -r dpkg-query -S \
 		| cut -d: -f1 \
 		| sort -u \
@@ -126,7 +128,7 @@ RUN { \
 
 # Install Memcached for php 8 (pinned; 3.4.0 is the latest pecl release, 2026-11)
 RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-		&& pecl install memcached-3.4.0 \
+		&& printf '/usr\n\n\n\n\n\n\n\n\n' | pecl install memcached-3.4.0 \
 		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip
@@ -134,6 +136,17 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzi
 
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
+
+# trixie 的 default-mysql-client 是 MariaDB 11.8，預設要求 TLS；公司的 MySQL 沒有 TLS，
+# drush sql-dump／備份會失敗。和 php8.3／8.4 分支一樣，四個指令都包 --ssl=0（TG-4887）。
+RUN set -eux; \
+	for bin in mysqldump mysql mariadb-dump mariadb; do \
+		real="/usr/bin/${bin}.upstream"; \
+		mv "/usr/bin/${bin}" "${real}"; \
+		printf '#!/bin/sh\nexec %s "$@" --ssl=0\n' "${real}" > "/usr/bin/${bin}"; \
+		chmod +x "/usr/bin/${bin}"; \
+	done; \
+	printf '[client]\nssl=0\n' > /etc/mysql/conf.d/disable-ssl.cnf
 
 # Install Composer In order to use compose
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
