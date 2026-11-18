@@ -48,7 +48,7 @@ RUN set -eux; \
 	apt-mark manual $savedAptMark > /dev/null; \
 	find /usr/local -type f -executable -exec ldd '{}' ';' 2> /dev/null \
 		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
-		| sort -u | xargs -r dpkg-query --search | cut -d: -f1 | sort -u | xargs -r apt-mark manual > /dev/null; \
+		| sort -u | xargs -r dpkg-query --search | awk -F: '!/^diversion / {print $1}' | sort -u | xargs -r apt-mark manual > /dev/null; \
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*; \
 	php --version; \
@@ -105,7 +105,7 @@ RUN set -eux; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
 		| awk '/=>/ { print $3 }' \
 		| sort -u \
-		| xargs -r dpkg-query -S \
+		| xargs -r dpkg-query -S | grep -v '^diversion ' \
 		| cut -d: -f1 \
 		| sort -u \
 		| xargs -rt apt-mark manual; \
