@@ -1,111 +1,113 @@
-FROM php:8.2-apache-bullseye
+FROM php:8.2-apache-trixie
 
-# Debian bullseye 已經 EOL，deb.debian.org／security.debian.org 不再提供它的套件
-# （索引還在但套件檔 404，或整個 suite 已經下架），所以套件來源一律改指 archive.debian.org。
-# archive 的 Release 檔已經過了 Valid-Until，要關掉期限檢查，apt-get update 才不會拒絕。
-RUN set -eux; \
-	sed -i \
-		-e 's#http://deb.debian.org/#http://archive.debian.org/#' \
-		-e 's#http://security.debian.org/#http://archive.debian.org/#' \
-		/etc/apt/sources.list; \
-	echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
+# Debian 13 (trixie) base, same as php8.3 / php8.4 / php8.1 (TG-4913). The image
+# used to be built on bullseye (EOL, packages only on archive.debian.org) with
+# PHP rebuilt from source, because the official bullseye variant stopped at
+# 8.2.29. The official trixie variant tracks 8.2 security releases, so no
+# source rebuild is needed any more.
+#
+# Fail the build if the official base image is older than the latest security
+# release: 8.2.36 (2026-11-19: date timezone cache use-after-free, session,
+# phar, SOAP and standard fixes), which also carries the PHP2Shell fix
+# (CVE-2026-109618 / CVE-2026-109619, TG-245).
+RUN php -r 'exit(version_compare(PHP_VERSION, "8.2.36", "<") ? 1 : 0);'
 
-# PHP2Shell (CVE-2026-109618 / CVE-2026-109619, 2026-10-21, TG-245).
-# The official bullseye variant stopped at 8.2.29; 8.2.35 (the fixed release) is
-# only published on bookworm/trixie. This layer rebuilds PHP from the 8.2.35 source on
-# bullseye, so the OS stays the same.
-# Configure options are the ones the official image was built with (php-config),
-# minus --with-pear so the install does not download from pear.php.net (the image's
-# existing pear/pecl stay). /usr/src/php.tar.xz is repacked from the patched tree,
-# so extensions built later with docker-php-ext-install (opcache etc.) use it too.
+# Upgrade Apache to the newest packaged build available for Debian 13 (trixie),
+# pulling apache2 from trixie-proposed-updates when it carries a higher version
+# than trixie / trixie-security.
+#
+# CVE-2026-49975 (mod_http2 HTTP/2 Bomb) is already fixed in trixie-security's
+# 2.4.67-1~deb13u3 via DSA-6323-1 — but that is a backport that keeps the
+# 2.4.67 version string. Vulnerability scanners that match on version string
+# alone still flag 2.4.67 and demand apache2 >= 2.4.68, so we ship the real
+# 2.4.68-1~deb13u1 Debian build that is staged in trixie-proposed-updates for
+# the next trixie point release.
+#
+# The proposed-updates source is added only for this layer and removed before
+# the layer ends, so no later apt layer sees it. No exact version is pinned:
+# apt picks the highest available apache2 (priority 500), so this keeps working
+# once 2.4.68 reaches trixie proper, and falls back to security's build if
+# proposed-updates ever lacks apache2.
 RUN set -eux; \
-	savedAptMark="$(apt-mark showmanual)"; \
+	echo 'deb http://deb.debian.org/debian trixie-proposed-updates main' \
+		> /etc/apt/sources.list.d/proposed-updates.list; \
 	apt-get update; \
-	apt-get install -y --no-install-recommends $PHPIZE_DEPS patch xz-utils ca-certificates curl \
-		apache2-dev libargon2-dev libcurl4-openssl-dev libonig-dev libreadline-dev \
-		libsodium-dev libsqlite3-dev libssl-dev libxml2-dev zlib1g-dev; \
-	curl -fsSL -o /usr/src/php.tar.xz "https://www.php.net/distributions/php-8.2.35.tar.xz"; \
-	echo "5737b98601fe5ab1b8c5db0c82ed3158acb9283ed3081ffe2faffb9ac81455e6 *php.tar.xz" | (cd /usr/src && sha256sum -c -); \
-	rm -f /usr/src/php.tar.xz.asc; \
-	export CFLAGS="$PHP_CFLAGS" CPPFLAGS="$PHP_CPPFLAGS" LDFLAGS="$PHP_LDFLAGS"; \
-	docker-php-source extract; \
-	cd /usr/src/php; \
-	opts="$(php-config --configure-options | sed -e 's/ --with-pear//' -e 's/ build_alias=[^ ]*//')"; \
-	eval "./configure $opts"; \
-	make -j "$(nproc)"; \
-	find -type f -name '*.a' -delete; \
-	make install; \
-	find /usr/local/bin /usr/local/sbin -type f -perm -0111 -exec sh -c 'file -b "$1" | grep -q ELF && strip --strip-all "$1"' _ '{}' ';'; \
-	make clean; \
-	rm -f .docker-extracted; \
-	cd /usr/src; \
-	rm -f php.tar.xz php.tar.xz.asc; \
-	tar -cJf php.tar.xz php; \
-	docker-php-source delete; \
-	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual $savedAptMark > /dev/null; \
-	find /usr/local -type f -executable -exec ldd '{}' ';' 2> /dev/null \
-		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
-		| sort -u | xargs -r dpkg-query --search | cut -d: -f1 | sort -u | xargs -r apt-mark manual > /dev/null; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /var/lib/apt/lists/*; \
-	php --version; \
-	php -r 'exit(PHP_VERSION === "8.2.35" ? 0 : 1);'
+	apt-get install -y --only-upgrade --no-install-recommends \
+		apache2 \
+		apache2-bin \
+		apache2-data \
+		apache2-utils \
+	; \
+	rm -f /etc/apt/sources.list.d/proposed-updates.list; \
+	rm -rf /var/lib/apt/lists/*
+
+# Upgrade OpenSSL to the trixie-security build (3.5.7-1~deb13u2, DSA-6465-1:
+# CVE-2026-18798 / CVE-2026-63072 / CVE-2026-63076). No version pin, so every
+# rebuild keeps tracking the newest security build from the default sources.
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --only-upgrade --no-install-recommends \
+		libssl3t64 \
+		openssl \
+	; \
+	rm -rf /var/lib/apt/lists/*
 
 # install the PHP extensions we need
 RUN set -eux; \
 	\
 	if command -v a2enmod; then \
-	a2enmod rewrite; \
-	a2enmod headers; \
-	a2enmod expires; \
+		a2enmod rewrite; \
+		a2enmod headers; \
+		a2enmod expires; \
 	fi; \
 	\
 	savedAptMark="$(apt-mark showmanual)"; \
 	\
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-	libfreetype6-dev \
-	libjpeg62-turbo-dev \
-	libjpeg-dev \
-	libpng-dev \
-	libwebp-dev \
-	libxpm-dev \
-	libpq-dev \
-	libzip-dev \
-	libsodium-dev \
-	libldap2-dev \
+		libfreetype6-dev \
+		libjpeg62-turbo-dev \
+		libjpeg-dev \
+		libpng-dev \
+		libwebp-dev \
+		libxpm-dev \
+		libpq-dev \
+		libzip-dev \
+		libsodium-dev \
+		libldap2-dev \
 	; \
 	\
 	docker-php-ext-configure gd \
-	--with-freetype \
-	--with-jpeg=/usr \
-	--with-webp=/usr \
-	--with-xpm=/usr \
+		--with-freetype \
+		--with-jpeg=/usr \
+		--with-webp=/usr \
+		--with-xpm=/usr \
 	; \
 	\
 	docker-php-ext-install -j "$(nproc)" \
-	gd \
-	opcache \
-	pdo_mysql \
-	pdo_pgsql \
-	zip \
-	bcmath \
-	exif \
-	sodium \
-	ldap \
+		gd \
+		opcache \
+		pdo_mysql \
+		pdo_pgsql \
+		zip \
+		bcmath \
+		exif \
+		sodium \
+		ldap \
 	; \
 	\
-	# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
+# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
 	apt-mark auto '.*' > /dev/null; \
 	apt-mark manual $savedAptMark; \
 	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
-	| awk '/=>/ { print $3 }' \
-	| sort -u \
-	| xargs -r dpkg-query -S \
-	| cut -d: -f1 \
-	| sort -u \
-	| xargs -rt apt-mark manual; \
+		| awk '/=>/ { print $3 }' \
+		| sort -u \
+		| xargs -r readlink -f \
+		| sort -u \
+		| xargs -r dpkg-query -S \
+		| cut -d: -f1 \
+		| sort -u \
+		| xargs -rt apt-mark manual; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 	rm -rf /var/lib/apt/lists/*
@@ -124,10 +126,14 @@ RUN { \
 RUN echo 'output_buffering=4096' > /usr/local/etc/php/conf.d/output_buffering.ini
 
 
-# Install Memcached for php 8 (pinned; 3.4.0 is the latest pecl release, 2026-11)
-RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
-	&& pecl install memcached-3.4.0 \
-	&& docker-php-ext-enable memcached
+# Install Memcached for php 8 (pinned; 3.4.0 is the latest pecl release, 2026-11).
+# pecl prompts on bookworm default `libmemcached directory` to `[no]` when
+# stdin is closed, which makes configure abort. Feed `/usr` for that prompt
+# and accept defaults (empty newlines) for the remaining 8 prompts:
+# zlib, fastlz, igbinary, msgpack, json, protocol, sasl, sessions.
+RUN apt-get update && apt-get install -y libmemcached-dev libssl-dev zlib1g-dev \
+		&& printf '/usr\n\n\n\n\n\n\n\n\n' | pecl install memcached-3.4.0 \
+		&& docker-php-ext-enable memcached
 
 # Install openssh && nano && supervisor && git && unzip
 RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzip
@@ -135,15 +141,49 @@ RUN apt-get update && apt-get install -y openssh-server nano supervisor git unzi
 # Install mysql-clients && rsync. In order to sync database with the container
 RUN apt-get install -y rsync default-mysql-client
 
+# Disable SSL by default for the bundled MariaDB client.
+#
+# Trixie's default-mysql-client is MariaDB 11.8+, whose mysql / mysqldump enable
+# `--ssl-verify-server-cert` and TLS-PREFERRED by default. Every Hello Santa
+# Drupal stack runs an internal MySQL / Percona server without an SSL listener,
+# so the new default breaks `drush sql-dump`, `mysqldump` backups, and any CI
+# `Backup Process` job with "TLS/SSL error: SSL is required, but the server
+# does not support it".
+#
+# A simple `/etc/mysql/conf.d/disable-ssl.cnf` is NOT enough — drush invokes
+# `mysqldump --defaults-file=/tmp/drush_XXX` which explicitly bypasses all
+# system config files. The only universal fix is to wrap the binaries so the
+# `--ssl=0` flag is appended unconditionally. Appended (not prepended) because
+# `mariadb-dump` requires `--defaults-file` as the very first arg.
+#
+# Trixie's `default-mysql-client` is MariaDB 11.8+, which ships the canonical
+# binaries as `mariadb` / `mariadb-dump` while `mysql` / `mysqldump` are kept
+# only as compatibility symlinks. Drush 13 on Trixie picks the `mariadb*`
+# names first (verified via the error trace
+# `The command "mariadb --defaults-file=/tmp/drush_xxx ..."`), so wrapping
+# only `mysql`/`mysqldump` leaves real `mariadb`/`mariadb-dump` exposed and
+# defeats the fix when targeting a server with TLS + self-signed cert (e.g.
+# MySQL 8.4 default). Wrap all four binaries.
+RUN set -eux; \
+	for bin in mysqldump mysql mariadb-dump mariadb; do \
+		real="/usr/bin/${bin}.upstream"; \
+		mv "/usr/bin/${bin}" "${real}"; \
+		printf '#!/bin/sh\nexec %s "$@" --ssl=0\n' "${real}" > "/usr/bin/${bin}"; \
+		chmod +x "/usr/bin/${bin}"; \
+	done; \
+	printf '[client]\nssl=0\n' > /etc/mysql/conf.d/disable-ssl.cnf
+
 # Add a non-root user for apache server user
 RUN useradd -ms /bin/bash myuser
 
 # Install Composer In order to use compose
-COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
+# Pinned to the 2.11 minor (current stable, 2026-11) like php8.3 / php8.4: tracks
+# security patches without risking a 3.x major bump.
+COPY --from=composer:2.11 /usr/bin/composer /usr/local/bin/
 
 # Install Node.js and npm
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-	&& apt-get install -y nodejs
+    && apt-get install -y nodejs
 
 # Set the PATH to include ./vendor/bin
 ENV PATH="./vendor/bin:${PATH}"
