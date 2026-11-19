@@ -1,0 +1,184 @@
+# PHP 5.6 security backports for the 2026-11-19 PHP security release (8.2.36 / 8.3.37 / 8.4.28), TG-4913.
+#
+# Source: Ondrej Sury's php5.6 source package 5.6.40-109+debsuryorg13.1+php+1 (packages.sury.org/php,
+# debian/patches, "Backported from 8.2.36"). Each section below is one of his patches,
+# hunks unchanged; only files that are not compiled into this image were left out
+# (tests, NEWS, sapi/cgi, sapi/fpm, ext/zend_test). CVE numbers follow his changelog.
+#
+#   0390 GHSA-q23r-hr55-xmpg  CVE-2026-15353  SOAP information disclosure through malformed array dimensions
+#   0391 GHSA-68fq-fh7h-f8gr  CVE-2026-128090 PHAR OpenSSL signature bypass via algorithm downgrade
+#   0394 GHSA-qc49-hpvq-g2w6  CVE-2026-129289 request smuggling through an unread request body (main/ part only)
+#   0395 GHSA-4646-p932-gw34  CVE-2026-129506 SOAP use-after-free when processing DTD entity references
+#   0396 GHSA-gr4f-wgx5-jpfv  CVE-2026-129496 timezone cache use-after-free (remote code execution)
+#   0397 GHSA-fm2m-fjf5-v3cp  CVE-2026-126714 partially overwritten session files (remote code execution)
+#   0398 GHSA-658j-r8rw-q6mx  CVE-2026-115560 session serializer mismatch (session.upload_progress.enabled off by default)
+#   0399 GHSA-f6gg-rchx-xw8j  CVE-2026-128064 mixed-case HTTPS and FTPS URLs can expose data in plaintext
+#
+# Not included:
+#   GHSA-5j3f-64r7-f564 (CVE-2026-129538, CGI), GHSA-3mg3-cr28-46gc (CVE-2026-129292, FPM),
+#   GHSA-jm4m-qfqx-967m (CVE-2026-129291, FPM): sapi/cgi and sapi/fpm are not built (Apache mod_php).
+#   GHSA-mmf9-xm3v-hg2x (CVE-2026-127960): not in the php5.6 package (no header folding code in 5.6).
+
+# ---- sury 0390-Fix-GHSA-q23r-hr55-xmpg-out-of-bounds-read-on-empty-.patch
+diff --git a/ext/soap/php_encoding.c b/ext/soap/php_encoding.c
+index 47080ba..b461d8f 100644
+--- a/ext/soap/php_encoding.c
++++ b/ext/soap/php_encoding.c
+@@ -2143,7 +2143,7 @@ static int calc_dimension_12(const char* str)
+ 		}
+ 		str++;
+ 	}
+-	return i;
++	return i != 0 ? i : 1;
+ }
+ 
+ static int* get_position_12(int dimension, const char* str)
+# ---- sury 0391-Fix-GHSA-68fq-fh7h-f8gr-refuse-keyless-phar-signatur.patch
+diff --git a/ext/phar/util.c b/ext/phar/util.c
+index 0db8110..8becf20 100644
+--- a/ext/phar/util.c
++++ b/ext/phar/util.c
+@@ -1554,6 +1554,23 @@ int phar_verify_signature(php_stream *fp, size_t end_of_phar, php_uint32 sig_typ
+ 
+ 	php_stream_rewind(fp);
+ 
++	if (sig_type != PHAR_SIG_OPENSSL) {
++		php_stream_statbuf ssb;
++		char *pfile;
++		zend_bool has_pubkey;
++
++		spprintf(&pfile, 0, "%s.pubkey", fname);
++		has_pubkey = php_stream_stat_path_ex(pfile, PHP_STREAM_URL_STAT_QUIET, &ssb, NULL) == 0;
++		efree(pfile);
++
++		if (has_pubkey) {
++			if (error) {
++				spprintf(error, 0, "openssl public key found, but the signature does not use openssl");
++			}
++			return FAILURE;
++		}
++	}
++
+ 	switch (sig_type) {
+ 		case PHAR_SIG_OPENSSL: {
+ #ifdef PHAR_HAVE_OPENSSL
+# ---- sury 0394-Fix-GHSA-qc49-hpvq-g2w6-Drain-unread-request-bodies.patch
+diff --git a/main/SAPI.c b/main/SAPI.c
+index 660012d..9ccde5f 100644
+--- a/main/SAPI.c
++++ b/main/SAPI.c
+@@ -515,7 +515,8 @@ SAPI_API void sapi_deactivate(TSRMLS_D)
+ 	zend_llist_destroy(&SG(sapi_headers).headers);
+ 	if (SG(request_info).request_body) {
+ 		SG(request_info).request_body = NULL;
+-	} else if (SG(server_context)) {
++	}
++	if (SG(server_context)) {
+ 		if (!SG(post_read)) {
+ 			/* make sure we've consumed all request input data */
+ 			char dummy[SAPI_POST_BLOCK_SIZE];
+# ---- sury 0395-Fix-GHSA-4646-p932-gw34-keep-SOAP-DTD-alive-during-c.patch
+diff --git a/ext/soap/php_xml.c b/ext/soap/php_xml.c
+index b5562e2..7131dac 100644
+--- a/ext/soap/php_xml.c
++++ b/ext/soap/php_xml.c
+@@ -53,6 +53,9 @@ static void cleanup_xml_node(xmlNodePtr node)
+ 				xmlUnlinkNode(trav);
+ 				xmlFreeNode(trav);
+ 			}
++		} else if (trav->type == XML_DTD_NODE) {
++			/* Attribute-value entity references can share content with the DTD.
++			 * Keep it alive until the document itself is freed. */
+ 		} else if ((trav->type != XML_ELEMENT_NODE) &&
+ 		           (trav->type != XML_CDATA_SECTION_NODE)) {
+ 			xmlUnlinkNode(trav);
+# ---- sury 0396-Fix-GHSA-gr4f-wgx5-jpfv-DATEG-tzcache-use-after-free.patch
+diff --git a/main/main.c b/main/main.c
+index 68678ae..589b5f5 100644
+--- a/main/main.c
++++ b/main/main.c
+@@ -704,15 +704,7 @@ PHPAPI void php_log_err(char *log_message TSRMLS_DC)
+ 			char *error_time_str;
+ 
+ 			time(&error_time);
+-#ifdef ZTS
+-			if (!php_during_module_startup()) {
+-				error_time_str = php_format_date("d-M-Y H:i:s e", 13, error_time, 1 TSRMLS_CC);
+-			} else {
+-				error_time_str = php_format_date("d-M-Y H:i:s e", 13, error_time, 0 TSRMLS_CC);
+-			}
+-#else
+-			error_time_str = php_format_date("d-M-Y H:i:s e", 13, error_time, 1 TSRMLS_CC);
+-#endif
++			error_time_str = php_format_date("d-M-Y H:i:s e", 13, error_time, PG(modules_activated) && EG(active) TSRMLS_CC);
+ 			len = spprintf(&tmp, 0, "[%s] %s%s", error_time_str, log_message, PHP_EOL);
+ #ifdef PHP_WIN32
+ 			php_flock(fd, 2);
+# ---- sury 0397-Fix-GHSA-fm2m-fjf5-v3cp-RCE-via-corrupted-session-fi.patch
+diff --git a/ext/session/mod_files.c b/ext/session/mod_files.c
+index 5c69ae3..9bf4ff6 100644
+--- a/ext/session/mod_files.c
++++ b/ext/session/mod_files.c
+@@ -414,10 +414,9 @@ PS_WRITE_FUNC(files)
+ 		return FAILURE;
+ 	}
+ 
+-	/* Truncate file if the amount of new data is smaller than the existing data set. */
+-
+-	if (vallen < (int)data->st_size) {
+-		php_ignore_value(ftruncate(data->fd, 0));
++	if (ftruncate(data->fd, 0) != 0) {
++		php_error_docref(NULL TSRMLS_CC, E_WARNING, "ftruncate() failed: %s (%d)", strerror(errno), errno);
++		return FAILURE;
+ 	}
+ 
+ #if defined(HAVE_PWRITE)
+# ---- sury 0398-Fix-GHSA-658j-r8rw-q6mx-session.upload_progress.enab.patch
+diff --git a/ext/session/session.c b/ext/session/session.c
+index 650ef17..7b61bfc 100644
+--- a/ext/session/session.c
++++ b/ext/session/session.c
+@@ -820,7 +820,7 @@ PHP_INI_BEGIN()
+ 
+ 	/* Upload progress */
+ 	STD_PHP_INI_BOOLEAN("session.upload_progress.enabled",
+-	                                                "1",     ZEND_INI_PERDIR, OnUpdateBool,        rfc1867_enabled, php_ps_globals, ps_globals)
++	                                                "0",     ZEND_INI_PERDIR, OnUpdateBool,        rfc1867_enabled, php_ps_globals, ps_globals)
+ 	STD_PHP_INI_BOOLEAN("session.upload_progress.cleanup",
+ 	                                                "1",     ZEND_INI_PERDIR, OnUpdateBool,        rfc1867_cleanup, php_ps_globals, ps_globals)
+ 	STD_PHP_INI_ENTRY("session.upload_progress.prefix",
+@@ -2438,6 +2438,7 @@ static PHP_GINIT_FUNCTION(ps) /* {{{ */
+ 	ps_globals->mod = NULL;
+ 	ps_globals->serializer = NULL;
+ 	ps_globals->mod_data = NULL;
++	ps_globals->rfc1867_enabled = 0;
+ 	ps_globals->session_status = php_session_none;
+ 	ps_globals->default_mod = NULL;
+ 	ps_globals->mod_user_implemented = 0;
+# ---- sury 0399-Fix-GHSA-f6gg-rchx-xw8j-mixed-case-HTTPS-and-FTPS.patch
+diff --git a/ext/standard/ftp_fopen_wrapper.c b/ext/standard/ftp_fopen_wrapper.c
+index 5bffa47..736359a 100644
+--- a/ext/standard/ftp_fopen_wrapper.c
++++ b/ext/standard/ftp_fopen_wrapper.c
+@@ -150,7 +150,7 @@ static php_stream *php_ftp_fopen_connect(php_stream_wrapper *wrapper, const char
+ 		return NULL;
+ 	}
+ 
+-	use_ssl = resource->scheme && (strlen(resource->scheme) > 3) && resource->scheme[3] == 's';
++	use_ssl = resource->scheme && !strcasecmp(resource->scheme, "ftps");
+ 
+ 	/* use port 21 if one wasn't specified */
+ 	if (resource->port == 0)
+diff --git a/ext/standard/http_fopen_wrapper.c b/ext/standard/http_fopen_wrapper.c
+index da0ee50..5006a35 100644
+--- a/ext/standard/http_fopen_wrapper.c
++++ b/ext/standard/http_fopen_wrapper.c
+@@ -241,7 +241,7 @@ php_stream *php_stream_url_wrap_http_ex(php_stream_wrapper *wrapper,
+ 			zval_dtor(&ztmp);
+ 		}
+ 
+-		use_ssl = resource->scheme && (strlen(resource->scheme) > 4) && resource->scheme[4] == 's';
++		use_ssl = resource->scheme && !strcasecmp(resource->scheme, "https");
+ 		/* choose default ports */
+ 		if (use_ssl && resource->port == 0)
+ 			resource->port = 443;
