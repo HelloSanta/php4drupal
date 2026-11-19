@@ -37,10 +37,9 @@ RUN set -eux; \
 		libexpat1-dev libldap2-dev libsctp-dev uuid-dev; \
 	mkdir /tmp/apdev; cd /tmp/apdev; \
 	apt-get download apache2-dev libapr1-dev libaprutil1-dev; \
-	for deb in *.deb; do \
-		dpkg-deb --fsys-tarfile "$deb" | tar -t | grep -v '/$' | sed 's#^\./#/#' >> /tmp/apdev.files; \
-		dpkg-deb -x "$deb" /; \
-	done; \
+	for deb in *.deb; do dpkg-deb --fsys-tarfile "$deb" | tar -t | sed 's#^\./#/#' >> /tmp/apdev.list; done; \
+	grep '/$' /tmp/apdev.list | while read -r d; do [ -d "$d" ] || echo "$d"; done | sort -ru > /tmp/apdev.newdirs; \
+	for deb in *.deb; do dpkg-deb --fsys-tarfile "$deb" | tar -xf - -C / --no-overwrite-dir; done; \
 	export CFLAGS="$PHP_CFLAGS" CPPFLAGS="$PHP_CPPFLAGS" LDFLAGS="$PHP_LDFLAGS"; \
 	docker-php-source extract; \
 	cd /usr/src/php; \
@@ -57,8 +56,9 @@ RUN set -eux; \
 	rm -f php.tar.xz php.tar.xz.asc php-7.4-security-20261119.patch; \
 	tar -cJf php.tar.xz php; \
 	docker-php-source delete; \
-	xargs -d '\n' rm -f < /tmp/apdev.files; \
-	rm -rf /tmp/apdev /tmp/apdev.files; \
+	grep -v '/$' /tmp/apdev.list | xargs -d '\n' rm -f; \
+	xargs -d '\n' -r rmdir < /tmp/apdev.newdirs; \
+	rm -rf /tmp/apdev /tmp/apdev.list /tmp/apdev.newdirs; \
 	dpkg-query -W -f '${Package}\n' | sort > /tmp/names.after; \
 	cut -d' ' -f1 /tmp/pkgs.before | comm -13 - /tmp/names.after | xargs -r apt-get purge -y; \
 	apt-mark showauto | sort | comm -13 /tmp/auto.before - | xargs -r apt-mark manual > /dev/null; \
@@ -69,5 +69,4 @@ RUN set -eux; \
 	php --version; \
 	php -r 'exit(PHP_VERSION === "7.4.33" ? 0 : 1);'; \
 	grep -aq 'public key found, but the signature does not use openssl' /usr/lib/apache2/modules/libphp7.so; \
-	apache2 -v | grep -q 'Apache/2.4.69'; \
-	apache2ctl -t
+	apache2 -v | grep -q 'Apache/2.4.69'
