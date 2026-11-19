@@ -56,6 +56,17 @@ push:
     refs:
       - php7.4-apache
 
+# TG-4913：搬到 trixie 前，在這個工作分支建一個測試 tag（php7.4-apache-trixie-test）給 hs69 測試站驗證；
+# 不推正式 tag、不推 GitHub。合併進 php7.4-apache 之前拿掉這個 job。
+build-test:
+  stage: build
+  script:
+    - docker build --pull --no-cache --tag $CI_REGISTRY_IMAGE:php7.4-apache-trixie-test .
+    - docker push $CI_REGISTRY_IMAGE:php7.4-apache-trixie-test
+  only:
+    refs:
+      - feature/tg-4913-php7.4-trixie-v2
+
 Mattermost:
   extends: .mattermost
   stage: notify
