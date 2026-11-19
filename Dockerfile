@@ -18,7 +18,10 @@ RUN set -eux; \
 # minus --with-pear so the install does not download from pear.php.net (the image's
 # existing pear/pecl stay). /usr/src/php.tar.xz is repacked from the patched tree,
 # so extensions built later with docker-php-ext-install (opcache etc.) use it too.
-COPY patches/php-7.4-CVE-2026-109618-109619.patch /usr/src/
+# 2026-11-19 PHP security release (TG-4913): the fixes Ondrej Sury backported to php7.4
+# (1:7.4.33-37+debsuryorg13.1+php+1) for the timezone cache use-after-free (CVE-2026-129496), session, phar, SOAP
+# and stream wrapper issues. See the header of the patch file for the list.
+COPY patches/php-7.4-CVE-2026-109618-109619.patch patches/php-7.4-security-20261119.patch /usr/src/
 RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
@@ -29,6 +32,7 @@ RUN set -eux; \
 	docker-php-source extract; \
 	cd /usr/src/php; \
 	patch -p1 --forward --no-backup-if-mismatch < /usr/src/php-7.4-CVE-2026-109618-109619.patch; \
+	patch -p1 --forward --no-backup-if-mismatch < /usr/src/php-7.4-security-20261119.patch; \
 	opts="$(php-config --configure-options | sed -e 's/ --with-pear//' -e 's/ build_alias=[^ ]*//')"; \
 	eval "./configure $opts"; \
 	make -j "$(nproc)"; \
@@ -38,7 +42,7 @@ RUN set -eux; \
 	make clean; \
 	rm -f .docker-extracted; \
 	cd /usr/src; \
-	rm -f php.tar.xz php.tar.xz.asc php-7.4-CVE-2026-109618-109619.patch; \
+	rm -f php.tar.xz php.tar.xz.asc php-7.4-CVE-2026-109618-109619.patch php-7.4-security-20261119.patch; \
 	tar -cJf php.tar.xz php; \
 	docker-php-source delete; \
 	apt-mark auto '.*' > /dev/null; \
