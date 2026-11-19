@@ -1,51 +1,77 @@
-# php7.4-apache can no longer be built from scratch (TG-4913, 2026-11-19): Debian bullseye is
-# EOL and packages.sury.org has removed its bullseye Apache packages (the index is still
-# there, the .deb files return 404), so the "install Apache from Sury" step of the previous
-# Dockerfile fails. The previous Dockerfile is in git: `git show 2cd2b87:Dockerfile`.
+# php7.4-apache on Debian 13 (trixie), TG-4913.
 #
-# Until this tag moves to a supported base, each rebuild starts from the last image that
-# was built from scratch (2026-11-14, TG-4866: PHP 7.4.33 + PHP2Shell backport, Apache
-# 2.4.69, Drush 8.5.0), pinned by digest, and only rebuilds PHP itself. Apache, the system
-# packages, the PECL extensions and every config file stay byte-for-byte the same.
-FROM hellosanta/php4drupal@sha256:a88d5287197233bf47646670cbc91ddfee5c72ddd0582262b6e892622b79dd04
+# Why: the previous base (official php:7.4-apache-bullseye, frozen since 2022-11) can no
+# longer be rebuilt: bullseye is EOL and packages.sury.org removed its bullseye Apache
+# packages. There is no official php:7.4 image for trixie, so this image takes the
+# official php:8.1-apache-trixie image for its Apache and docker-php tooling
+# (docker-php-ext-*, docker-php-source, same /usr/local layout as before), removes
+# PHP 8.1 and builds PHP 7.4.33 in its place.
+#
+# PHP source: the official php-7.4.33 tarball plus the patches Ondrej Sury ships in his
+# php7.4 package for trixie (1:7.4.33-37+debsuryorg13.1+php+1, packages.sury.org/php):
+# every security fix backported since 7.4 went EOL (including PHP2Shell,
+# CVE-2026-109618 / CVE-2026-109619, and the 2026-11-19 batch: CVE-2026-129496
+# timezone cache use-after-free, session, phar, SOAP, stream wrappers) and the fixes
+# needed to build against trixie's libraries (OpenSSL 3, libxml2, ICU, GCC 14).
+# The original debian.tar.xz is in patches/. Patches 0001-0046 are Debian packaging
+# changes (paths, session.save_path default, system time zone database, phpinfo
+# credits) and are not applied, so PHP behaves like the docker-php build it replaces.
+FROM php:8.1-apache-trixie
 
-# 2026-11-19 PHP security release (TG-4913): the fixes Ondrej Sury backported to php7.4
-# (1:7.4.33-37+debsuryorg13.1+php+1) for the timezone cache use-after-free
-# (CVE-2026-129496), session, phar, SOAP and stream wrapper issues. See the header of the
-# patch file for the list.
-#
-# Same rebuild as the PHP2Shell layer of the previous Dockerfile: configure options from
-# php-config (minus --with-pear), /usr/src/php.tar.xz repacked from the patched tree.
-# Differences forced by the missing Sury packages:
-# - the Sury source list is set aside while the build dependencies are installed, so apt
-#   only looks at archive.debian.org;
-# - the build dependencies are removed by name afterwards and the build fails unless the
-#   package list (names, versions, states) is exactly what it was before: no system
-#   package may be upgraded or removed by this layer;
-# - apache2-dev / libapr1-dev / libaprutil1-dev cannot be installed (they want Debian's
-#   Apache and APR, the image has Sury's), so their files are unpacked for the build and
-#   removed again. The from-scratch build compiled mod_php against the same Debian headers.
-COPY patches/php-7.4-security-20261119.patch /usr/src/
+ENV PHP_VERSION=7.4.33
+
+# Apache: newest build from trixie's security archive (2.4.71-1~deb13u1 or later), not pinned.
 RUN set -eux; \
-	dpkg-query -W -f '${Package} ${Version} ${db:Status-Abbrev}\n' | sort > /tmp/pkgs.before; \
-	apt-mark showauto | sort > /tmp/auto.before; \
-	mv /etc/apt/sources.list.d/sury-apache.list /tmp/sury-apache.list; \
 	apt-get update; \
-	apt-get install -y --no-install-recommends $PHPIZE_DEPS patch xz-utils \
-		libargon2-dev libcurl4-openssl-dev libonig-dev libreadline-dev \
-		libsodium-dev libsqlite3-dev libssl-dev libxml2-dev zlib1g-dev \
-		libexpat1-dev libldap2-dev libsctp-dev uuid-dev; \
-	mkdir /tmp/apdev; cd /tmp/apdev; \
-	apt-get download apache2-dev libapr1-dev libaprutil1-dev; \
-	for deb in *.deb; do dpkg-deb --fsys-tarfile "$deb" | tar -t | sed 's#^\./#/#' >> /tmp/apdev.list; done; \
-	grep '/$' /tmp/apdev.list | while read -r d; do [ -d "$d" ] || echo "$d"; done | sort -ru > /tmp/apdev.newdirs; \
-	for deb in *.deb; do dpkg-deb --fsys-tarfile "$deb" | tar -xf - -C / --no-overwrite-dir; done; \
+	apt-get install -y --only-upgrade --no-install-recommends \
+		apache2 apache2-bin apache2-data apache2-utils libssl3t64 openssl; \
+	rm -rf /var/lib/apt/lists/*; \
+	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' apache2-bin)" ge '2.4.71'; \
+	apache2 -v
+
+# Replace PHP 8.1 with PHP 7.4.33 + Sury's patches. Configure options are the ones the
+# official php:7.4-apache image was built with (php-config --configure-options of the
+# previous image), minus --with-pear: pear/pecl stay as installed in the base image.
+COPY ["patches/php7.4_7.4.33-37+debsuryorg13.1+php+1.debian.tar.xz", "/usr/src/sury-debian.tar.xz"]
+RUN set -eux; \
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends $PHPIZE_DEPS patch xz-utils ca-certificates curl \
+		apache2-dev libargon2-dev libcurl4-openssl-dev libonig-dev libreadline-dev \
+		libsodium-dev libsqlite3-dev libssl-dev libxml2-dev zlib1g-dev; \
+	a2dismod -f php; \
+	rm -f /usr/lib/apache2/modules/libphp.so /etc/apache2/mods-available/php.load; \
+	rm -rf /usr/local/lib/php/extensions /usr/local/lib/php/build /usr/local/include/php; \
+	rm -f /usr/local/bin/php /usr/local/bin/php-config /usr/local/bin/phpize /usr/local/bin/phpdbg \
+		/usr/local/bin/phar /usr/local/bin/phar.phar /usr/local/etc/php/conf.d/*; \
+	curl -fsSL -o /usr/src/php.tar.xz "https://www.php.net/distributions/php-7.4.33.tar.xz"; \
+	echo "924846abf93bc613815c55dd3f5809377813ac62a9ec4eb3778675b82a27b927 */usr/src/php.tar.xz" | sha256sum -c -; \
+	echo "73e1cdc96d71cd2791fbf9540f4e241cfd3803a6e17259e870ac146086281b04 */usr/src/sury-debian.tar.xz" | sha256sum -c -; \
+	rm -f /usr/src/php.tar.xz.asc; \
 	export CFLAGS="$PHP_CFLAGS" CPPFLAGS="$PHP_CPPFLAGS" LDFLAGS="$PHP_LDFLAGS"; \
 	docker-php-source extract; \
 	cd /usr/src/php; \
-	patch -p1 --forward --no-backup-if-mismatch < /usr/src/php-7.4-security-20261119.patch; \
-	opts="$(php-config --configure-options | sed -e 's/ --with-pear//' -e 's/ build_alias=[^ ]*//')"; \
-	eval "./configure $opts"; \
+	tar -xJf /usr/src/sury-debian.tar.xz -C /usr/src debian/patches; \
+	n=0; \
+	for p in $(cat /usr/src/debian/patches/series); do \
+		num="${p%%-*}"; \
+		[ "$num" -ge 47 ] || continue; \
+# 0196 only touches ext/enchant (not built) and needs the skipped 0039
+		[ "$num" != 0196 ] || continue; \
+		patch -p1 --forward --no-backup-if-mismatch < "/usr/src/debian/patches/$p" || echo "patch $p reported rejects"; \
+		n=$((n+1)); \
+	done; \
+# NEWS is the only file allowed to have rejects (its entries depend on the skipped patches)
+	test -z "$(find . -name '*.rej' ! -name 'NEWS.rej')"; \
+	find . -name '*.rej' -delete; \
+	test "$n" -eq 175; \
+	./buildconf --force; \
+	./configure --build=x86_64-linux-gnu --with-config-file-path=/usr/local/etc/php \
+		--with-config-file-scan-dir=/usr/local/etc/php/conf.d --enable-option-checking=fatal \
+		--with-mhash --with-pic --enable-ftp --enable-mbstring --enable-mysqlnd \
+		--with-password-argon2 --with-sodium=shared --with-pdo-sqlite=/usr --with-sqlite3=/usr \
+		--with-curl --with-iconv --with-openssl --with-readline --with-zlib --disable-phpdbg \
+		--with-libdir=lib/x86_64-linux-gnu --disable-cgi --with-apxs2; \
 	make -j "$(nproc)"; \
 	find -type f -name '*.a' -delete; \
 	make install; \
@@ -53,20 +79,120 @@ RUN set -eux; \
 	make clean; \
 	rm -f .docker-extracted; \
 	cd /usr/src; \
-	rm -f php.tar.xz php.tar.xz.asc php-7.4-security-20261119.patch; \
+	rm -rf php.tar.xz php.tar.xz.asc sury-debian.tar.xz debian; \
 	tar -cJf php.tar.xz php; \
 	docker-php-source delete; \
-	grep -v '/$' /tmp/apdev.list | xargs -d '\n' rm -f; \
-	xargs -d '\n' -r rmdir < /tmp/apdev.newdirs; \
-	rm -rf /tmp/apdev /tmp/apdev.list /tmp/apdev.newdirs; \
-	dpkg-query -W -f '${Package}\n' | sort > /tmp/names.after; \
-	cut -d' ' -f1 /tmp/pkgs.before | comm -13 - /tmp/names.after | xargs -r apt-get purge -y; \
-	apt-mark showauto | sort | comm -13 /tmp/auto.before - | xargs -r apt-mark manual > /dev/null; \
-	apt-mark showauto | sort | comm -23 /tmp/auto.before - | xargs -r apt-mark auto > /dev/null; \
-	dpkg-query -W -f '${Package} ${Version} ${db:Status-Abbrev}\n' | sort | diff /tmp/pkgs.before -; \
-	mv /tmp/sury-apache.list /etc/apt/sources.list.d/sury-apache.list; \
-	rm -rf /var/lib/apt/lists/* /tmp/pkgs.before /tmp/auto.before /tmp/names.after; \
+	docker-php-ext-enable sodium; \
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark > /dev/null; \
+	find /usr/local -type f -executable -exec ldd '{}' ';' 2> /dev/null \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
+		| sort -u | xargs -r dpkg-query --search | awk -F: '!/^diversion / {print $1}' | sort -u | xargs -r apt-mark manual > /dev/null; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*; \
 	php --version; \
 	php -r 'exit(PHP_VERSION === "7.4.33" ? 0 : 1);'; \
 	grep -aq 'public key found, but the signature does not use openssl' /usr/lib/apache2/modules/libphp7.so; \
-	apache2 -v | grep -q 'Apache/2.4.69'
+	test -e /etc/apache2/mods-enabled/php7.load
+
+# mod_expires、mod_headers：Drupal 的 .htaccess 用它們給靜態檔加快取標頭，沒啟用的話瀏覽器每頁都重抓所有靜態檔。
+RUN a2enmod expires headers
+
+# 啟用 rewrite 模組
+RUN a2enmod rewrite
+
+# 安裝 PHP 所需延伸模組
+RUN set -eux; \
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+	libfreetype6-dev \
+	libjpeg62-turbo-dev \
+	libjpeg-dev \
+	libpng-dev \
+	libwebp-dev \
+	libxpm-dev \
+	libpq-dev \
+	libzip-dev \
+	libmagickwand-dev \
+	; \
+	docker-php-ext-configure gd \
+	--with-freetype \
+	--with-jpeg=/usr \
+	--with-webp=/usr \
+	--with-xpm=/usr \
+	; \
+	docker-php-ext-install -j"$(nproc)" \
+	gd \
+	opcache \
+	pdo_mysql \
+	pdo_pgsql \
+	zip \
+	bcmath \
+	; \
+	pecl install imagick-3.8.1 && docker-php-ext-enable imagick; \
+	apt-mark auto '.*' > /dev/null; \
+	apt-mark manual $savedAptMark; \
+	ldd "$(php -r 'echo ini_get("extension_dir");')"/*.so \
+	| awk '/=>/ { print $3 }' \
+	| sort -u \
+	| xargs -r readlink -f \
+	| sort -u \
+	| xargs -r dpkg-query -S \
+	| cut -d: -f1 \
+	| sort -u \
+	| xargs -rt apt-mark manual; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	rm -rf /var/lib/apt/lists/*
+
+# PHP 設定：啟用 opcache
+RUN { \
+	echo 'opcache.memory_consumption=128'; \
+	echo 'opcache.interned_strings_buffer=8'; \
+	echo 'opcache.max_accelerated_files=4000'; \
+	echo 'opcache.revalidate_freq=60'; \
+	echo 'opcache.fast_shutdown=1'; \
+	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
+
+# 安裝 Memcached 支援
+RUN apt-get update && apt-get install -y libmemcached-dev zlib1g-dev \
+	&& pecl install memcached-3.4.0 \
+	&& docker-php-ext-enable memcached \
+	&& rm -rf /var/lib/apt/lists/*
+
+# 安裝 ssh, nano, supervisor, drush, git
+RUN apt-get update && apt-get install -y openssh-server nano supervisor git \
+	&& php -r "readfile('https://github.com/drush-ops/drush/releases/download/8.5.0/drush.phar');" > drush \
+	&& chmod +x drush \
+	&& mv drush /usr/local/bin/drush \
+	&& drush init -y \
+	&& rm -rf /var/lib/apt/lists/*
+
+# 安裝 rsync 與 MySQL client
+RUN apt-get update && apt-get install -y rsync default-mysql-client \
+	&& rm -rf /var/lib/apt/lists/*
+
+# trixie 的 default-mysql-client 是 MariaDB 11.8，預設要求 TLS；公司的 MySQL 沒有 TLS，
+# drush sql-dump／備份會失敗。和 php8.1／8.3／8.4 分支一樣，四個指令都包 --ssl=0。
+RUN set -eux; \
+	for bin in mysqldump mysql mariadb-dump mariadb; do \
+		real="/usr/bin/${bin}.upstream"; \
+		mv "/usr/bin/${bin}" "${real}"; \
+		printf '#!/bin/sh\nexec %s "$@" --ssl=0\n' "${real}" > "/usr/bin/${bin}"; \
+		chmod +x "/usr/bin/${bin}"; \
+	done; \
+	printf '[client]\nssl=0\n' > /etc/mysql/conf.d/disable-ssl.cnf
+
+# 安裝 Composer
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/
+
+# 複製自訂設定檔與腳本
+ADD conf/supervisord.conf /etc/supervisord.conf
+ADD conf/apache2.conf /etc/apache2/apache2.conf
+ADD conf/php.ini /usr/local/etc/php/
+ADD scripts/start.sh /start.sh
+RUN chmod 755 /start.sh
+
+EXPOSE 80 443
+
+CMD ["/start.sh"]
