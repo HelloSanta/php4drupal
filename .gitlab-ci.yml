@@ -60,6 +60,9 @@ push:
 # 不推正式 tag、不推 GitHub。合併進 php7.4-apache 之前拿掉這個 job。
 build-test:
   stage: build
+  # 只有 server0（runner 24）掛 docker 標籤、一次只跑一個建置；測試 tag 改用其他 runner 並行建置
+  tags:
+    - drupal
   script:
     - docker build --pull --no-cache --tag $CI_REGISTRY_IMAGE:php7.4-apache-trixie-test .
     - docker push $CI_REGISTRY_IMAGE:php7.4-apache-trixie-test
