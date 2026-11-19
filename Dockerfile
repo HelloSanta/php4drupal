@@ -19,15 +19,19 @@ FROM hellosanta/php4drupal@sha256:a88d5287197233bf47646670cbc91ddfee5c72ddd05822
 # Differences forced by the missing Sury packages:
 # - the Sury source list is set aside while the build dependencies are installed, so apt
 #   only looks at archive.debian.org;
+# - the build dependencies are removed by name afterwards and the build fails unless the
+#   package list (names, versions, states) is exactly what it was before: no system
+#   package may be upgraded or removed by this layer;
 # - apache2-dev / libapr1-dev / libaprutil1-dev cannot be installed (they want Debian's
 #   Apache and APR, the image has Sury's), so their files are unpacked for the build and
 #   removed again. The from-scratch build compiled mod_php against the same Debian headers.
 COPY patches/php-7.4-security-20261119.patch /usr/src/
 RUN set -eux; \
-	savedAptMark="$(apt-mark showmanual)"; \
+	dpkg-query -W -f '${Package} ${Version} ${db:Status-Abbrev}\n' | sort > /tmp/pkgs.before; \
+	apt-mark showauto | sort > /tmp/auto.before; \
 	mv /etc/apt/sources.list.d/sury-apache.list /tmp/sury-apache.list; \
 	apt-get update; \
-	apt-get install -y --no-install-recommends $PHPIZE_DEPS patch xz-utils perl \
+	apt-get install -y --no-install-recommends $PHPIZE_DEPS patch xz-utils \
 		libargon2-dev libcurl4-openssl-dev libonig-dev libreadline-dev \
 		libsodium-dev libsqlite3-dev libssl-dev libxml2-dev zlib1g-dev \
 		libexpat1-dev libldap2-dev libsctp-dev uuid-dev; \
@@ -55,14 +59,13 @@ RUN set -eux; \
 	docker-php-source delete; \
 	xargs -d '\n' rm -f < /tmp/apdev.files; \
 	rm -rf /tmp/apdev /tmp/apdev.files; \
-	apt-mark auto '.*' > /dev/null; \
-	apt-mark manual $savedAptMark > /dev/null; \
-	find /usr/local -type f -executable -exec ldd '{}' ';' 2> /dev/null \
-		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
-		| sort -u | xargs -r dpkg-query --search | cut -d: -f1 | sort -u | xargs -r apt-mark manual > /dev/null; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	dpkg-query -W -f '${Package}\n' | sort > /tmp/names.after; \
+	cut -d' ' -f1 /tmp/pkgs.before | comm -13 - /tmp/names.after | xargs -r apt-get purge -y; \
+	apt-mark showauto | sort | comm -13 /tmp/auto.before - | xargs -r apt-mark manual > /dev/null; \
+	apt-mark showauto | sort | comm -23 /tmp/auto.before - | xargs -r apt-mark auto > /dev/null; \
+	dpkg-query -W -f '${Package} ${Version} ${db:Status-Abbrev}\n' | sort | diff /tmp/pkgs.before -; \
 	mv /tmp/sury-apache.list /etc/apt/sources.list.d/sury-apache.list; \
-	rm -rf /var/lib/apt/lists/*; \
+	rm -rf /var/lib/apt/lists/* /tmp/pkgs.before /tmp/auto.before /tmp/names.after; \
 	php --version; \
 	php -r 'exit(PHP_VERSION === "7.4.33" ? 0 : 1);'; \
 	grep -aq 'public key found, but the signature does not use openssl' /usr/lib/apache2/modules/libphp7.so; \
