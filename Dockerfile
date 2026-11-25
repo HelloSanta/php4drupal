@@ -20,11 +20,11 @@ FROM php:8.1-apache-trixie
 
 ENV PHP_VERSION=7.4.33
 
-# Apache: newest build from trixie's security archive (2.4.71-1~deb13u1 or later), not pinned.
+# All base packages (Apache, glibc, nghttp2, OpenSSL…) upgraded to trixie's security archive: the official
+# php:8.1-apache base is EOL and no longer rebuilt (TG-4953). Apache 2.4.71-1~deb13u1 or later, not pinned.
 RUN set -eux; \
 	apt-get update; \
-	apt-get install -y --only-upgrade --no-install-recommends \
-		apache2 apache2-bin apache2-data apache2-utils libssl3t64 openssl; \
+	DEBIAN_FRONTEND=noninteractive apt-get upgrade -y --no-install-recommends; \
 	rm -rf /var/lib/apt/lists/*; \
 	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' apache2-bin)" ge '2.4.71'; \
 	apache2 -v
