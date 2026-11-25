@@ -1,11 +1,11 @@
 FROM php:8.1-apache-trixie
 
 # TG-4887：base 從 buster（Apache 2.4.38、已 EOL）換成官方 php:8.1-apache 現在的 base（Debian 13 trixie）。
-# Apache 升到 trixie 安全來源的最新版（2.4.71-1~deb13u1 起）；不鎖版本，之後重建會跟著安全來源走。
+# Apache 等全部 base 套件升到 trixie 安全來源的最新版（官方 php:8.1-apache 已 EOL 不再重建，glibc、nghttp2 要靠這層，TG-4953）；
+# Apache 2.4.71-1~deb13u1 起，不鎖版本，之後重建會跟著安全來源走。
 RUN set -eux; \
 	apt-get update; \
-	apt-get install -y --only-upgrade --no-install-recommends \
-		apache2 apache2-bin apache2-data apache2-utils libssl3t64 openssl; \
+	DEBIAN_FRONTEND=noninteractive apt-get upgrade -y --no-install-recommends; \
 	rm -rf /var/lib/apt/lists/*; \
 	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' apache2-bin)" ge '2.4.71'; \
 	apache2 -v
