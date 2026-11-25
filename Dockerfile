@@ -20,15 +20,17 @@ RUN set -eux; \
 	sed -i '/stretch-updates/d' /etc/apt/sources.list; \
 	echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
 
-# Apache：base 映像停在 stretch 建立時的版本，從沒跟上 stretch 的安全更新（TG-4887）。
-# 這裡只把 apache2 套件升到 stretch 安全來源的最終版（2.4.25-3+deb9u13），其他套件不動；
+# base 映像停在 stretch 建立時（2019）的版本，從沒跟上 stretch 的安全更新。
+# TG-4887 先只升 apache2；TG-4953（2026-11-26，安全監控重新評估）改成全部套件都升到 stretch 安全來源的最終版
+# （libssl1.1 1.1.0l-1~deb9u6、gnutls、krb5、libssh2、nghttp2、systemd 等 37 個，全部來自 Debian-Security:9）；
 # 設定檔保留 base 映像的（force-confold），後面的 ADD 照舊覆蓋。
 RUN set -eux; \
 	apt-get update; \
-	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --only-upgrade \
-		-o Dpkg::Options::=--force-confold apache2 apache2-bin apache2-data apache2-utils; \
+	DEBIAN_FRONTEND=noninteractive apt-get upgrade -y --no-install-recommends \
+		-o Dpkg::Options::=--force-confold; \
 	rm -rf /var/lib/apt/lists/*; \
 	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' apache2-bin)" ge '2.4.25-3+deb9u13'; \
+	dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libssl1.1)" ge '1.1.0l-1~deb9u6'; \
 	apache2 -v
 
 # PHP2Shell (CVE-2026-109618 / CVE-2026-109619, 2026-10-21, TG-245).
